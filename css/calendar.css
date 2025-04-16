@@ -1,0 +1,79 @@
+## css/calendar.css - Calendar Styles
+
+```css
+.calendar-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+#month-display {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+    background-color: #3498db;
+    color: white;
+}
+
+.calendar-day {
+    min-height: 100px;
+    border: 1px solid #ddd;
+    padding: 5px;
+    position: relative;
+}
+
+.calendar-day.inactive {
+    background-color: #f5f5f5;
+    color: #aaa;
+}
+
+.calendar-day.today {
+    background-color: #e8f4fc;
+    border-color: #3498db;
+}
+
+.day-number {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+.events {
+    margin-top: 25px;
+}
+
+.event {
+    background: #3498db;
+    color: white;
+    padding: 3px 6px;
+    margin-bottom: 3px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event:hover {
+    background: #2980b9;
+}
+```
