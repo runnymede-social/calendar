@@ -17,17 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (res.ok && data.token) {
       localStorage.setItem('calendarToken', data.token);
 
-      // ✅ Fetch the secure calendar from Lambda
-      fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/calendar', {
-        headers: { Authorization: 'Bearer ' + data.token }
-      })
-      .then(res => res.text())
-      .then(html => {
-        document.open();
-        document.write(html);
-        document.close();
-      });
-
+      // ✅ Just redirect to the FullCalendar page
+      window.location.href = 'calendar.html';
     } else {
       errorMsg.textContent = data.message || 'Login failed';
     }
