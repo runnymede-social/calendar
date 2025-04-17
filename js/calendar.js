@@ -1,4 +1,4 @@
-// ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are ready
+// ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are readyy
 
 document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
