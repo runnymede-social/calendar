@@ -2,11 +2,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
     window.location.href = 'index.html';
+    return;
   }
 
   const calendarEl = document.getElementById('calendar');
-  const calendarWrapper = document.getElementById('calendar');
 
+  // 🛠️ SAFELY ATTACH MODAL TO BODY
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
@@ -27,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
     <button id="editBtn">Edit</button>
     <button id="closeBtn">Close</button>
   `;
-  calendarWrapper.style.position = 'relative';
-  calendarWrapper.appendChild(modal);
+
+  document.body.appendChild(modal); // ✅ safe and always works
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     titleFormat: { year: 'numeric', month: 'long' },
@@ -112,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // 🔄 Load events on page load
   (async () => {
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
