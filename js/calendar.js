@@ -99,7 +99,8 @@
       modal.querySelector('#closeBtn').onclick = () => {
         modal.style.display = 'none';
       };
-      });
+    }
+  });
 
   (async () => {
     try {
