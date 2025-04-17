@@ -53,7 +53,7 @@ async function authenticate(password) {
 
     if (response.ok && data.token) {
       localStorage.setItem('calendarToken', data.token);
-      window.location.href = 'calendar.html';
+      window.location.href = 'main.html';
     } else {
       document.getElementById('error-message').textContent = data.message || 'Invalid password. Please try again.';
     }
