@@ -1,6 +1,3 @@
-## js/auth.js - Authentication Logic
-
-```javascript
 // Check if user is already authenticated
 function isAuthenticated() {
     return localStorage.getItem('calendarToken') !== null;
@@ -17,19 +14,22 @@ if (window.location.pathname.endsWith('calendar.html') && !isAuthenticated()) {
 }
 
 // Handle login form submission
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Only initialize login if we're on the login page
     const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', function() {
-            const password = document.getElementById('password').value;
+    const passwordInput = document.getElementById('password');
+    const errorMessage = document.getElementById('error-message');
+
+    if (loginBtn && passwordInput) {
+        loginBtn.addEventListener('click', function () {
+            const password = passwordInput.value;
             authenticate(password);
         });
-        
+
         // Allow pressing Enter to submit
-        document.getElementById('password').addEventListener('keyup', function(event) {
+        passwordInput.addEventListener('keyup', function (event) {
             if (event.key === 'Enter') {
-                const password = document.getElementById('password').value;
+                const password = passwordInput.value;
                 authenticate(password);
             }
         });
@@ -39,22 +39,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // Authenticate with the API
 async function authenticate(password) {
     try {
-        const response = await fetch('https://your-api-gateway-url.com/auth', {
+        const response = await fetch('https://xqj7dxbhge.execute-api.us-east-1.amazonaws.com/dev/auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ password })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.token) {
             // Store the token and redirect
             localStorage.setItem('calendarToken', data.token);
             window.location.href = 'calendar.html';
         } else {
-            // Show error message
             document.getElementById('error-message').textContent = 'Invalid password. Please try again.';
         }
     } catch (error) {
@@ -68,4 +67,4 @@ function logout() {
     localStorage.removeItem('calendarToken');
     window.location.href = 'index.html';
 }
-```
+
