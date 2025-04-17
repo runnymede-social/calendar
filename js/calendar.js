@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   const calendarEl = document.getElementById('calendar');
-  const isMobile = window.innerWidth < 768;
+  let isMobile = window.innerWidth < 768;
 
   // Add mobile-specific styles for the calendar
   const style = document.createElement('style');
@@ -38,11 +38,11 @@ document.addEventListener('DOMContentLoaded', function () {
         min-height: 20px;
       }
       /* Hide event text on mobile, just show dots */
-      .fc-daygrid-event-harness {
+      .fc-daygrid-event {
         display: none !important;
       }
       /* Show colored dots for days with events */
-      .has-events:after {
+      .has-events::after {
         content: '';
         display: block;
         width: 8px;
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
         background-color: #3498db;
         border-radius: 50%;
         position: absolute;
-        bottom: 4px;
+        bottom: 10px;
         left: 50%;
         transform: translateX(-50%);
       }
@@ -235,18 +235,14 @@ document.addEventListener('DOMContentLoaded', function () {
       right: 'prev,next'
     },
     
-    // Add dots to days with events
-    dayCellDidMount: function(info) {
-      // Only do this on mobile
+    // Add dots to days with events - this doesn't work with FullCalendar's dayCellDidMount
+    // Instead we'll use eventDidMount to mark days with events
+    eventDidMount: function(info) {
       if (isMobile) {
-        // Check if the day has events
-        const dayEvents = calendar.getEvents().filter(event => {
-          const eventStart = new Date(event.start);
-          return eventStart.toDateString() === info.date.toDateString();
-        });
-        
-        if (dayEvents.length > 0) {
-          info.el.classList.add('has-events');
+        // Mark the day cell as having events
+        const dayEl = info.el.closest('.fc-daygrid-day');
+        if (dayEl) {
+          dayEl.classList.add('has-events');
         }
       }
     },
