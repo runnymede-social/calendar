@@ -1,97 +1,23 @@
-// ✅ calendar.js wrapped in an IIFE to avoid global conflicts
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Calendar</title>
 
-(function () {
-  const token = localStorage.getItem('calendarToken');
-  if (!token) {
-    window.location.href = 'index.html';
-  }
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    #calendar { max-width: 900px; margin: 40px auto; }
+  </style>
+</head>
+<body>
+  <h1>Team Calendar</h1>
+  <div id="calendar"></div>
+  <div id="error" style="color: red;"></div>
 
-  const calendarEl = document.getElementById('calendar');
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    selectable: true,
-    editable: false,
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="js/calendar.js?v=8"></script>
+</body>
+</html>
 
-    dateClick: async function (info) {
-      const title = prompt('Enter event title:');
-      if (!title) return;
-
-      const description = prompt('Enter event description (optional):') || '';
-
-      try {
-        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token
-          },
-          body: JSON.stringify({ title, description, time: info.dateStr })
-        });
-
-        const data = await res.json();
-        if (!res.ok || !data.id) throw new Error('Failed to create event');
-
-        calendar.addEvent({
-          id: data.id,
-          title,
-          start: info.dateStr,
-          allDay: true,
-          extendedProps: { description }
-        });
-      } catch (err) {
-        alert('Create error: ' + err.message);
-      }
-    },
-
-    eventClick: function (info) {
-      const event = info.event;
-      const desc = event.extendedProps.description || '(No description)';
-      const view = confirm(`Title: ${event.title}\nDescription: ${desc}\n\nClick OK to edit, Cancel to close.`);
-
-      if (!view) return;
-
-      const newTitle = prompt('Edit title:', event.title);
-      if (newTitle === null) return;
-      const newDesc = prompt('Edit description:', desc);
-      if (newDesc === null) return;
-
-      fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        },
-        body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
-      })
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to update');
-          event.setProp('title', newTitle);
-          event.setExtendedProp('description', newDesc);
-        })
-        .catch(err => alert('Update error: ' + err.message));
-    }
-  });
-
-  (async () => {
-    try {
-      const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-
-      const events = await res.json();
-      events.forEach(ev => {
-        calendar.addEvent({
-          id: ev.id,
-          title: ev.title,
-          start: ev.time,
-          allDay: true,
-          extendedProps: { description: ev.description || '' }
-        });
-      });
-
-      calendar.render();
-    } catch (err) {
-      document.getElementById('error').innerText = 'Error loading events: ' + err.message;
-    }
-  })();
-})();
