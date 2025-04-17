@@ -1,6 +1,3 @@
-
-// ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are ready
-
 document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -16,6 +13,44 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   const calendarEl = document.getElementById('calendar');
+
+  // Add mobile-specific styles for the calendar
+  const style = document.createElement('style');
+  style.textContent = `
+    @media (max-width: 768px) {
+      .fc-view-harness {
+        min-height: 500px !important;
+      }
+      .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+      }
+      .fc-col-header-cell-cushion,
+      .fc-daygrid-day-number {
+        font-size: 0.9rem;
+      }
+      .fc-daygrid-day-events {
+        min-height: 30px;
+      }
+      .fc-daygrid-event {
+        font-size: 0.8rem;
+        padding: 2px 4px;
+      }
+      #eventModal {
+        width: 90% !important;
+        max-width: 350px;
+      }
+      #calendar {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
 
   // 🛠️ SAFELY ATTACH MODAL TO BODY
   const modal = document.createElement('div');
@@ -33,18 +68,22 @@ document.addEventListener('DOMContentLoaded', function () {
   modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   modal.style.minWidth = '300px';
 
-  modal.innerHTML = \`
+  modal.innerHTML = `
     <h3 id="modalTitle"></h3>
     <p id="modalDesc"></p>
-    <button id="editBtn">Edit</button>
-    <button id="closeBtn">Close</button>
-  \`;
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+      <button id="editBtn">Edit</button>
+      <button id="deleteBtn" style="background-color: #ff4d4d; color: white;">Delete</button>
+      <button id="closeBtn">Close</button>
+    </div>
+  `;
 
   document.body.appendChild(modal);
 
   const modalTitleEl = document.getElementById('modalTitle');
   const modalDescEl = document.getElementById('modalDesc');
   const editBtn = document.getElementById('editBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
   const closeBtn = document.getElementById('closeBtn');
 
   document.addEventListener('click', function (event) {
@@ -62,6 +101,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     height: 'auto',
+    contentHeight: 600, // Ensures minimum height
+    aspectRatio: 1.35,  // Controls width-to-height ratio
     expandRows: true,
     selectable: true,
     editable: false,
@@ -71,13 +112,15 @@ document.addEventListener('DOMContentLoaded', function () {
       dayGridMonth: {
         type: 'dayGridMonth',
         dayMaxEventRows: true
-      },
-      dayGridDay: {
-        type: 'dayGridMonth' // 👈 Force all screen sizes to use month view
       }
     },
     titleFormat: { year: 'numeric', month: 'long' },
     dayCellClassNames: () => ['custom-day-cell'],
+    headerToolbar: {
+      left: 'title',
+      center: '',
+      right: 'prev,next'
+    },
 
     dateClick: async function (info) {
       const title = prompt('Enter event title:');
@@ -160,6 +203,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       };
 
+      deleteBtn.onclick = async () => {
+        if (confirm('Are you sure you want to delete this event?')) {
+          try {
+            const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token
+              },
+              body: JSON.stringify({ id: event.id })
+            });
+
+            if (!res.ok) throw new Error('Failed to delete event');
+            
+            // Remove event from calendar
+            event.remove();
+            
+            // Close modal
+            modal.style.display = 'none';
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) {
+              document.body.removeChild(overlay);
+            }
+          } catch (err) {
+            alert('Delete error: ' + err.message);
+          }
+        }
+      };
+
       closeBtn.onclick = () => {
         modal.style.display = 'none';
         const overlay = document.getElementById('modalOverlay');
@@ -168,6 +240,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       };
     }
+  });
+
+  // Handle window resize to force calendar redraw
+  window.addEventListener('resize', function() {
+    calendar.updateSize();
   });
 
   (async () => {
@@ -188,9 +265,13 @@ document.addEventListener('DOMContentLoaded', function () {
       });
 
       calendar.render();
+      
+      // Force an update after a slight delay to ensure proper rendering
+      setTimeout(() => {
+        calendar.updateSize();
+      }, 100);
     } catch (err) {
       document.getElementById('error').innerText = 'Error loading events: ' + err.message;
     }
   })();
 });
-
