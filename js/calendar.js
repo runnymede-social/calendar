@@ -1,6 +1,6 @@
-// ✅ calendar.js wrapped in an IIFE to avoid global conflicts
+// ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are ready
 
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
     window.location.href = 'index.html';
@@ -8,6 +8,7 @@
 
   const calendarEl = document.getElementById('calendar');
   const calendarWrapper = document.getElementById('calendar');
+
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
@@ -27,7 +28,7 @@
   calendarWrapper.appendChild(modal);
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
-    titleFormat: { year: 'numeric', month: 'long' }, // To customize header text
+    titleFormat: { year: 'numeric', month: 'long' },
     dayMaxEventRows: true,
     dayCellClassNames: () => ['custom-day-cell'],
     initialView: 'dayGridMonth',
@@ -37,7 +38,6 @@
     dateClick: async function (info) {
       const title = prompt('Enter event title:');
       if (!title) return;
-
       const description = prompt('Enter event description (optional):') || '';
 
       try {
@@ -67,9 +67,16 @@
 
     eventClick: function (info) {
       const event = info.event;
+      const titleEl = modal.querySelector('#modalTitle');
+      const descEl = modal.querySelector('#modalDesc');
 
-      modal.querySelector('#modalTitle').textContent = event.title;
-      modal.querySelector('#modalDesc').textContent = event.extendedProps.description || '(No description)';
+      if (!titleEl || !descEl) {
+        console.error('❌ Modal elements not found!');
+        return;
+      }
+
+      titleEl.textContent = event.title;
+      descEl.textContent = event.extendedProps.description || '(No description)';
       modal.style.display = 'block';
 
       modal.querySelector('#editBtn').onclick = async () => {
@@ -99,6 +106,7 @@
       modal.querySelector('#closeBtn').onclick = () => {
         modal.style.display = 'none';
       };
+    },
     }
   });
 
@@ -124,5 +132,5 @@
       document.getElementById('error').innerText = 'Error loading events: ' + err.message;
     }
   })();
-})();
+});
 
