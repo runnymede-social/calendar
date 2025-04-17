@@ -1,3 +1,5 @@
+// ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are ready
+
 document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -5,10 +7,9 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
-  const isMobile = window.innerWidth <= 768;
   const calendarEl = document.getElementById('calendar');
 
-  // Modal setup
+  // 🛠️ SAFELY ATTACH MODAL TO BODY
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <button id="editBtn">Edit</button>
     <button id="closeBtn">Close</button>
   `;
+
   document.body.appendChild(modal);
 
   const modalTitleEl = document.getElementById('modalTitle');
@@ -39,29 +41,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.addEventListener('click', function (event) {
     if (modal.style.display === 'block' && !modal.contains(event.target) &&
-        event.target.className !== 'fc-event-title' &&
-        !event.target.closest('.fc-event')) {
+      event.target.className !== 'fc-event-title' &&
+      !event.target.closest('.fc-event')) {
       modal.style.display = 'none';
       const overlay = document.getElementById('modalOverlay');
-      if (overlay) document.body.removeChild(overlay);
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
     }
   });
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: isMobile ? 'dayGridDay' : 'dayGridMonth',
-    dayMaxEventRows: !isMobile,
+    initialView: 'dayGridMonth',
     selectable: true,
     editable: false,
     eventDisplay: 'block',
+    dayMaxEventRows: true,
+    views: {
+      dayGridMonth: {
+        type: 'dayGridMonth',
+        dayMaxEventRows: true
+      },
+      dayGridDay: {
+        type: 'dayGridMonth' // 👈 Force all screen sizes to use month view
+      }
+    },
     titleFormat: { year: 'numeric', month: 'long' },
     dayCellClassNames: () => ['custom-day-cell'],
 
     dateClick: async function (info) {
-      if (isMobile) {
-        calendar.changeView('dayGridDay', info.dateStr);
-        return;
-      }
-
       const title = prompt('Enter event title:');
       if (!title) return;
       const description = prompt('Enter event description (optional):') || '';
@@ -117,7 +125,9 @@ document.addEventListener('DOMContentLoaded', function () {
       editBtn.onclick = async () => {
         modal.style.display = 'none';
         const overlay = document.getElementById('modalOverlay');
-        if (overlay) document.body.removeChild(overlay);
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
         const newTitle = prompt('Edit title:', event.title);
         if (newTitle === null) return;
         const newDesc = prompt('Edit description:', event.extendedProps.description || '');
@@ -143,7 +153,9 @@ document.addEventListener('DOMContentLoaded', function () {
       closeBtn.onclick = () => {
         modal.style.display = 'none';
         const overlay = document.getElementById('modalOverlay');
-        if (overlay) document.body.removeChild(overlay);
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
       };
     }
   });
