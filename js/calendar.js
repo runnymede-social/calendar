@@ -1,3 +1,4 @@
+//v1
 document.addEventListener('DOMContentLoaded', function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
