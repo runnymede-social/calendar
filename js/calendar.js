@@ -11,13 +11,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     selectable: true,
     editable: true,
 
-    // 🔁 Edit or delete on click
+    // 🖊️ Click event: Edit or delete
     eventClick: async function (info) {
       const currentTitle = info.event.title;
       const newTitle = prompt('Edit event title (or leave blank to delete):', currentTitle);
 
       if (newTitle === null) return; // Cancel
-
       if (newTitle === '') {
         const confirmed = confirm('Are you sure you want to delete this event?');
         if (!confirmed) return;
@@ -60,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     },
 
-    // ➕ Create on select
+    // ➕ Add new event
     select: async function (info) {
       const title = prompt('Enter event title:');
       if (!title) return;
@@ -92,11 +91,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   });
 
-  // 📥 Load existing events
+  // 📥 Load events
   try {
     const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
       headers: { Authorization: 'Bearer ' + token }
     });
+
+    if (res.status === 401) {
+      localStorage.removeItem('calendarToken');
+      window.location.href = 'index.html';
+      return;
+    }
 
     const events = await res.json();
     events.forEach(ev => {
@@ -108,10 +113,11 @@ document.addEventListener('DOMContentLoaded', async function () {
       });
     });
 
-    calendar.render(); // ✅ This line makes it all work
+    calendar.render();
   } catch (err) {
     document.getElementById('error').innerText = 'Error loading events: ' + err.message;
-    window.location.href = 'index.html';
+    console.error('Calendar fetch error:', err);
+    // ❌ Do not redirect on generic fetch failure
   }
 });
 
