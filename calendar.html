@@ -5,23 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Team Calendar</title>
 
+  <!-- FullCalendar styles -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+
   <style>
     body { font-family: sans-serif; padding: 1rem; }
     #calendar { max-width: 900px; margin: 40px auto; }
+    #error { color: red; text-align: center; }
   </style>
+
+  <!-- ✅ Redirect early if not logged in -->
+  <script>
+    const token = localStorage.getItem('calendarToken');
+    if (!token) {
+      window.location.href = 'index.html';
+    }
+  </script>
 </head>
 <body>
-  <h1>Team Calendar</h1>
+  <h1 style="text-align: center;">Team Calendar</h1>
   <div id="calendar"></div>
-  <div id="error" style="color: red;"></div>
+  <div id="error"></div>
 
+  <!-- FullCalendar script -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="js/calendar.js"></script>
 
-  <!-- Versioned JS to force cache-busting -->
-  <script src="js/calendar.js?v=4"></script>
-
+  <!-- Your calendar logic -->
+  <script src="js/calendar.js?v=6"></script>
 </body>
 </html>
 
