@@ -7,17 +7,38 @@
 
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    #calendar { max-width: 900px; margin: 40px auto; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 1rem;
+      background: #f7f7f7;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    #calendar {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .fc-daygrid-day.fc-day-today {
+      background-color: #d2f8d2 !important; /* ✅ Mint green */
+    }
   </style>
 </head>
 <body>
-  <h1>Team Calendar</h1>
+  <h1>Runnymede Calendar</h1>
   <div id="calendar"></div>
-  <div id="error" style="color: red;"></div>
+  <div id="error" style="color: red; text-align: center;"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
-  <script src="js/calendar.js?v=8"></script>
+  <script src="js/calendar.js?v=9"></script>
 </body>
 </html>
 
