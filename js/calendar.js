@@ -7,6 +7,28 @@
   }
 
   const calendarEl = document.getElementById('calendar');
+  const modal = document.createElement('div');
+  modal.id = 'eventModal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '50%';
+  modal.style.left = '50%';
+  modal.style.transform = 'translate(-50%, -50%)';
+  modal.style.background = '#fff';
+  modal.style.padding = '20px';
+  modal.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+  modal.style.zIndex = '1000';
+
+  modal.innerHTML = `
+    <h3 id="modalTitle"></h3>
+    <p id="modalDesc"></p>
+    <button id="editBtn">Edit</button>
+    <button id="closeBtn">Close</button>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('closeBtn').onclick = () => modal.style.display = 'none';
+
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     selectable: true,
@@ -46,36 +68,35 @@
     eventClick: function (info) {
       const event = info.event;
       const desc = event.extendedProps.description || '(No description)';
-      const view = confirm(`Title: ${event.title}
-Description: ${desc}
 
-Click OK to close. Click Edit to modify.`);
+      document.getElementById('modalTitle').textContent = event.title;
+      document.getElementById('modalDesc').textContent = desc;
+      modal.style.display = 'block';
 
-      if (view) return;
+      document.getElementById('editBtn').onclick = async () => {
+        modal.style.display = 'none';
+        const newTitle = prompt('Edit title:', event.title);
+        if (newTitle === null) return;
+        const newDesc = prompt('Edit description:', desc);
+        if (newDesc === null) return;
 
-      const newTitle = prompt('Edit title:', event.title);
-      if (newTitle === null) return;
-      const newDesc = prompt('Edit description:', desc);
-      if (newDesc === null) return;
+        try {
+          const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
+          });
 
-      fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        },
-        body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
-      })
-        .then(res => {
           if (!res.ok) throw new Error('Failed to update');
           event.setProp('title', newTitle);
           event.setExtendedProp('description', newDesc);
-        })
-        .catch(err => alert('Update error: ' + err.message));
-
-      if (viewOnly) return;
-
-      // If we wanted to trigger edit from here, logic would go here (removed for clarity).
+        } catch (err) {
+          alert('Update error: ' + err.message);
+        }
+      };
     }
   });
 
