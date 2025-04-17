@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const password = passwordInput.value;
 
     const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/auth', {
+
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
