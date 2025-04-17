@@ -1,3 +1,4 @@
+
 // ✅ calendar.js wrapped in DOMContentLoaded to ensure modal elements are ready
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -32,12 +33,12 @@ document.addEventListener('DOMContentLoaded', function () {
   modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   modal.style.minWidth = '300px';
 
-  modal.innerHTML = `
+  modal.innerHTML = \`
     <h3 id="modalTitle"></h3>
     <p id="modalDesc"></p>
     <button id="editBtn">Edit</button>
     <button id="closeBtn">Close</button>
-  `;
+  \`;
 
   document.body.appendChild(modal);
 
@@ -60,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
+    height: 'auto',
+    expandRows: true,
     selectable: true,
     editable: false,
     eventDisplay: 'block',
