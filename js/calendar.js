@@ -31,6 +31,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.body.appendChild(modal); // ✅ safe and always works
 
+  // Create references to modal elements after appending to DOM
+  const modalTitleEl = document.getElementById('modalTitle');
+  const modalDescEl = document.getElementById('modalDesc');
+  const editBtn = document.getElementById('editBtn');
+  const closeBtn = document.getElementById('closeBtn');
+
+  // Add click event to close modal when clicking outside
+  document.addEventListener('click', function(event) {
+    if (modal.style.display === 'block' && !modal.contains(event.target) && event.target.className !== 'fc-event-title') {
+      modal.style.display = 'none';
+    }
+  });
+
   const calendar = new FullCalendar.Calendar(calendarEl, {
     titleFormat: { year: 'numeric', month: 'long' },
     dayMaxEventRows: true,
@@ -71,19 +84,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     eventClick: function (info) {
       const event = info.event;
-      const titleEl = modal.querySelector('#modalTitle');
-      const descEl = modal.querySelector('#modalDesc');
-
-      if (!titleEl || !descEl) {
+      
+      // Use the references we created earlier
+      if (!modalTitleEl || !modalDescEl) {
         console.error('❌ Modal elements not found!');
         return;
       }
 
-      titleEl.textContent = event.title;
-      descEl.textContent = event.extendedProps.description || '(No description)';
+      modalTitleEl.textContent = event.title;
+      modalDescEl.textContent = event.extendedProps.description || '(No description)';
       modal.style.display = 'block';
 
-      modal.querySelector('#editBtn').onclick = async () => {
+      // Use the button references instead of querying each time
+      editBtn.onclick = async () => {
         modal.style.display = 'none';
         const newTitle = prompt('Edit title:', event.title);
         if (newTitle === null) return;
@@ -107,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       };
 
-      modal.querySelector('#closeBtn').onclick = () => {
+      closeBtn.onclick = () => {
         modal.style.display = 'none';
       };
     }
@@ -137,4 +150,3 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   })();
 });
-
