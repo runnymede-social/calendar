@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
+  // 🔒 Force FullCalendar to ignore screen size and always use full month view
+  window.matchMedia = () => ({
+    matches: false,
+    addListener: () => {},
+    removeListener: () => {}
+  });
+
   const calendarEl = document.getElementById('calendar');
 
   // 🛠️ SAFELY ATTACH MODAL TO BODY
