@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
-  modal.style.position = 'absolute';
+  modal.style.position = 'fixed'; // Changed from absolute to fixed
   modal.style.zIndex = '1000';
   modal.style.top = '50%';
   modal.style.left = '50%';
@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
   modal.style.padding = '1rem';
   modal.style.border = '1px solid #ccc';
   modal.style.borderRadius = '8px';
-  modal.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)'; // Enhanced shadow
+  modal.style.minWidth = '300px'; // Ensure modal has minimum width
 
   modal.innerHTML = `
     <h3 id="modalTitle"></h3>
@@ -39,8 +40,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Add click event to close modal when clicking outside
   document.addEventListener('click', function(event) {
-    if (modal.style.display === 'block' && !modal.contains(event.target) && event.target.className !== 'fc-event-title') {
+    if (modal.style.display === 'block' && !modal.contains(event.target) && 
+        event.target.className !== 'fc-event-title' && 
+        !event.target.closest('.fc-event')) {
       modal.style.display = 'none';
+      const overlay = document.getElementById('modalOverlay');
+      if (overlay) {
+        document.body.removeChild(overlay);
+      }
     }
   });
 
@@ -84,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     eventClick: function (info) {
       const event = info.event;
+      console.log('Event clicked:', event.title); // Debug log
       
       // Use the references we created earlier
       if (!modalTitleEl || !modalDescEl) {
@@ -91,13 +99,30 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
+      // Add overlay to make modal more visible
+      const overlay = document.createElement('div');
+      overlay.id = 'modalOverlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      overlay.style.zIndex = '999';
+      document.body.appendChild(overlay);
+      
       modalTitleEl.textContent = event.title;
       modalDescEl.textContent = event.extendedProps.description || '(No description)';
+      console.log('Setting modal display to block'); // Debug log
       modal.style.display = 'block';
 
       // Use the button references instead of querying each time
       editBtn.onclick = async () => {
         modal.style.display = 'none';
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
         const newTitle = prompt('Edit title:', event.title);
         if (newTitle === null) return;
         const newDesc = prompt('Edit description:', event.extendedProps.description || '');
@@ -122,6 +147,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
       closeBtn.onclick = () => {
         modal.style.display = 'none';
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
       };
     }
   });
