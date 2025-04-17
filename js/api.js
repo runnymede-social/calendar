@@ -2,7 +2,7 @@
 
 ```javascript
 // API endpoint URLs - replace with your actual API Gateway URL
-const API_BASE = 'https://your-api-gateway-url.com';
+const API_BASE = 'https://xqj7dxbhge.execute-api.us-east-1.amazonaws.com/dev';
 const API_ENDPOINTS = {
     auth: `${API_BASE}/auth`,
     events: `${API_BASE}/events`
