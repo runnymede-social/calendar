@@ -5,7 +5,7 @@ function isAuthenticated() {
 
 // Redirect to calendar if already authenticated
 if (window.location.pathname.endsWith('index.html') && isAuthenticated()) {
-  window.location.href = 'calendar.html';
+  window.location.href = 'main.html';
 }
 
 // Redirect to login if not authenticated
