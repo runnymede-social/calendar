@@ -65,15 +65,18 @@
       }
     },
 
-    let currentEvent = null;
+    eventClick: function (info) {
+      const event = info.event;
+
+      modal.querySelector('#modalTitle').textContent = event.title;
+      modal.querySelector('#modalDesc').textContent = event.extendedProps.description || '(No description)';
+      modal.style.display = 'block';
 
       modal.querySelector('#editBtn').onclick = async () => {
-        if (!currentEvent) return;
-
         modal.style.display = 'none';
-        const newTitle = prompt('Edit title:', currentEvent.title);
+        const newTitle = prompt('Edit title:', event.title);
         if (newTitle === null) return;
-        const newDesc = prompt('Edit description:', currentEvent.extendedProps.description || '');
+        const newDesc = prompt('Edit description:', event.extendedProps.description || '');
 
         try {
           const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
@@ -82,12 +85,12 @@
               'Content-Type': 'application/json',
               Authorization: 'Bearer ' + token
             },
-            body: JSON.stringify({ id: currentEvent.id, title: newTitle, description: newDesc })
+            body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
           });
 
           if (!res.ok) throw new Error('Failed to update');
-          currentEvent.setProp('title', newTitle);
-          currentEvent.setExtendedProp('description', newDesc);
+          event.setProp('title', newTitle);
+          event.setExtendedProp('description', newDesc);
         } catch (err) {
           alert('Update error: ' + err.message);
         }
@@ -96,16 +99,7 @@
       modal.querySelector('#closeBtn').onclick = () => {
         modal.style.display = 'none';
       };
-
-      eventClick: function (info) {
-        currentEvent = info.event;
-
-        modal.querySelector('#modalTitle').textContent = currentEvent.title;
-        modal.querySelector('#modalDesc').textContent = currentEvent.extendedProps.description || '(No description)';
-        modal.style.display = 'block';
-      }
-    }
-  });
+      });
 
   (async () => {
     try {
