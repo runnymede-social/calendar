@@ -26,9 +26,10 @@
   calendarWrapper.style.position = 'relative';
   calendarWrapper.appendChild(modal);
 
-  document.getElementById('closeBtn').onclick = () => modal.style.display = 'none';
-
   const calendar = new FullCalendar.Calendar(calendarEl, {
+    titleFormat: { year: 'numeric', month: 'long' }, // To customize header text
+    dayMaxEventRows: true,
+    dayCellClassNames: () => ['custom-day-cell'],
     initialView: 'dayGridMonth',
     selectable: true,
     editable: false,
@@ -64,20 +65,15 @@
       }
     },
 
-    eventClick: function (info) {
-      const event = info.event;
-      const desc = event.extendedProps.description || '(No description)';
+    let currentEvent = null;
 
-      document.getElementById('modalTitle').textContent = event.title;
-      document.getElementById('modalDesc').textContent = desc;
-      modal.style.display = 'block';
+      modal.querySelector('#editBtn').onclick = async () => {
+        if (!currentEvent) return;
 
-      document.getElementById('editBtn').onclick = async () => {
         modal.style.display = 'none';
-        const newTitle = prompt('Edit title:', event.title);
+        const newTitle = prompt('Edit title:', currentEvent.title);
         if (newTitle === null) return;
-        const newDesc = prompt('Edit description:', desc);
-        if (newDesc === null) return;
+        const newDesc = prompt('Edit description:', currentEvent.extendedProps.description || '');
 
         try {
           const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
@@ -86,16 +82,28 @@
               'Content-Type': 'application/json',
               Authorization: 'Bearer ' + token
             },
-            body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
+            body: JSON.stringify({ id: currentEvent.id, title: newTitle, description: newDesc })
           });
 
           if (!res.ok) throw new Error('Failed to update');
-          event.setProp('title', newTitle);
-          event.setExtendedProp('description', newDesc);
+          currentEvent.setProp('title', newTitle);
+          currentEvent.setExtendedProp('description', newDesc);
         } catch (err) {
           alert('Update error: ' + err.message);
         }
       };
+
+      modal.querySelector('#closeBtn').onclick = () => {
+        modal.style.display = 'none';
+      };
+
+      eventClick: function (info) {
+        currentEvent = info.event;
+
+        modal.querySelector('#modalTitle').textContent = currentEvent.title;
+        modal.querySelector('#modalDesc').textContent = currentEvent.extendedProps.description || '(No description)';
+        modal.style.display = 'block';
+      }
     }
   });
 
