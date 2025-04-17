@@ -7,17 +7,15 @@
   }
 
   const calendarEl = document.getElementById('calendar');
+  const calendarWrapper = document.getElementById('calendar');
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
-  modal.style.position = 'fixed';
+  modal.style.position = 'absolute';
+  modal.style.zIndex = '1000';
   modal.style.top = '50%';
   modal.style.left = '50%';
   modal.style.transform = 'translate(-50%, -50%)';
-  modal.style.background = '#fff';
-  modal.style.padding = '20px';
-  modal.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
-  modal.style.zIndex = '1000';
 
   modal.innerHTML = `
     <h3 id="modalTitle"></h3>
@@ -25,7 +23,8 @@
     <button id="editBtn">Edit</button>
     <button id="closeBtn">Close</button>
   `;
-  document.body.appendChild(modal);
+  calendarWrapper.style.position = 'relative';
+  calendarWrapper.appendChild(modal);
 
   document.getElementById('closeBtn').onclick = () => modal.style.display = 'none';
 
