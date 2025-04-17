@@ -1,13 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Social Calendar Login</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Team Calendar - Login</title>
+  <style>
+    body {
+      background: #f7f7f7;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 300px;
+    }
+
+    .login-box h1 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .login-box label {
+      font-weight: bold;
+      display: block;
+      text-align: left;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .login-box button {
+      width: 100%;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .login-box button:hover {
+      background-color: #357ab8;
+    }
+
+    #error-message {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to the Social Calendar</h1>
-  <input type="password" id="password" placeholder="Enter password" />
-  <button id="login-btn">Enter</button>
-  <div id="error-message"></div>
+  <div class="login-box">
+    <h1>Team Calendar</h1>
+    <label for="password">Password:</label>
+    <input type="password" id="password" placeholder="Enter password" />
+    <button id="login-btn">Enter</button>
+    <div id="error-message"></div>
+  </div>
 
   <script src="js/auth.js"></script>
 </body>
