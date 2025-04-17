@@ -1,70 +1,68 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async function () {
   const token = localStorage.getItem('calendarToken');
   if (!token) {
     window.location.href = 'index.html';
     return;
   }
 
-  const Calendar = tui.Calendar;
-  const calendar = new Calendar('#calendar', {
-    defaultView: 'month',
-    useCreationPopup: true,
-    useDetailPopup: true
+  const calendarEl = document.getElementById('calendar');
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    selectable: true,
+    headerToolbar: {
+      start: 'title',
+      center: '',
+      end: 'today prev,next'
+    },
+    select: async function(info) {
+      const title = prompt('Enter event title:');
+      if (!title) return;
+
+      const time = info.startStr;
+
+      try {
+        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ title, time })
+        });
+
+        if (!res.ok) throw new Error('Failed to save event');
+
+        calendar.addEvent({
+          title,
+          start: time,
+          allDay: true
+        });
+      } catch (err) {
+        alert('Error saving event: ' + err.message);
+      }
+    }
   });
 
-  // Fetch events
-  fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-    headers: { Authorization: 'Bearer ' + token }
-  })
-  .then(res => {
+  try {
+    const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+
     if (!res.ok) throw new Error('Unauthorized or expired token');
-    return res.json();
-  })
-  .then(events => {
+
+    const events = await res.json();
     events.forEach(ev => {
-      calendar.createSchedules([{
-        id: ev.id || String(Date.now() + Math.random()),
+      calendar.addEvent({
         title: ev.title,
         start: ev.time,
-        end: ev.time,
-        category: 'time'
-      }]);
+        allDay: true
+      });
     });
-  })
-  .catch(err => {
-    alert('Error loading events: ' + err.message);
+
+    calendar.render();
+  } catch (err) {
+    document.getElementById('error').innerText = 'Error loading events: ' + err.message;
     window.location.href = 'index.html';
-  });
-
-  // Create new event
-  calendar.on('beforeCreateSchedule', function(event) {
-    const { start, title } = event;
-    const time = start._date.toISOString();
-
-    fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token
-      },
-      body: JSON.stringify({ title, time })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to save event');
-      return res.json();
-    })
-    .then(() => {
-      calendar.createSchedules([{
-        id: String(Date.now() + Math.random()),
-        title,
-        start: time,
-        end: time,
-        category: 'time'
-      }]);
-    })
-    .catch(err => {
-      alert(err.message);
-    });
-  });
+  }
 });
 
