@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
       modal.querySelector('#closeBtn').onclick = () => {
         modal.style.display = 'none';
       };
-    },
     }
   });
 
