@@ -62,10 +62,12 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Mobile specific logout button */
     @media (max-width: 768px) {
       #logoutContainer {
-        position: relative;
+        position: absolute;
         text-align: right;
         margin-bottom: 10px;
-        right: 0;
+        right: 15px;
+        top: 10px;
+        z-index: 100;
       }
       
       #logoutBtn {
@@ -273,14 +275,8 @@ document.addEventListener('DOMContentLoaded', function () {
     </button>
   `;
   
-  // Insert logout button in the appropriate place depending on mobile/desktop
-  if (isMobile) {
-    // For mobile, add at the top of the calendar container
-    calendarEl.parentNode.insertBefore(logoutContainer, calendarEl);
-  } else {
-    // For desktop, add at the top right of the page
-    document.body.insertBefore(logoutContainer, document.body.firstChild);
-  }
+  // Always add logout button to the top of the body for consistent positioning
+  document.body.insertBefore(logoutContainer, document.body.firstChild);
   
   // Add logout functionality
   document.getElementById('logoutBtn').addEventListener('click', function() {
@@ -305,6 +301,23 @@ document.addEventListener('DOMContentLoaded', function () {
   modal.style.borderRadius = '8px';
   modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   modal.style.minWidth = '300px';
+  
+  // Create event creation modal
+  const createEventModal = document.createElement('div');
+  createEventModal.id = 'createEventModal';
+  createEventModal.style.display = 'none';
+  createEventModal.style.position = 'fixed';
+  createEventModal.style.zIndex = '1000';
+  createEventModal.style.top = '50%';
+  createEventModal.style.left = '50%';
+  createEventModal.style.transform = 'translate(-50%, -50%)';
+  createEventModal.style.background = '#fff';
+  createEventModal.style.padding = '1rem';
+  createEventModal.style.border = '1px solid #ccc';
+  createEventModal.style.borderRadius = '8px';
+  createEventModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+  createEventModal.style.minWidth = '300px';
+  createEventModal.style.maxWidth = '90%';
   
   // Create day events modal for mobile
   const dayEventsModal = document.createElement('div');
@@ -347,7 +360,25 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
   `;
 
+  // Create event modal content
+  createEventModal.innerHTML = `
+    <h3>Create New Event</h3>
+    <div style="margin: 15px 0;">
+      <label for="newEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold;">Event Title:</label>
+      <input type="text" id="newEventTitle" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
+    </div>
+    <div style="margin: 15px 0;">
+      <label for="newEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
+      <textarea id="newEventDesc" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; min-height: 80px;"></textarea>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+      <button id="saveNewEventBtn" style="background-color: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Save</button>
+      <button id="cancelNewEventBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+    </div>
+  `;
+
   document.body.appendChild(modal);
+  document.body.appendChild(createEventModal);
 
   // Get references to modal elements
   const modalTitleEl = document.getElementById('modalTitle');
@@ -355,6 +386,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const editBtn = document.getElementById('editBtn');
   const deleteBtn = document.getElementById('deleteBtn');
   const closeBtn = document.getElementById('closeBtn');
+  
+  // Get references to create event modal elements
+  const newEventTitleInput = document.getElementById('newEventTitle');
+  const newEventDescInput = document.getElementById('newEventDesc');
+  const saveNewEventBtn = document.getElementById('saveNewEventBtn');
+  const cancelNewEventBtn = document.getElementById('cancelNewEventBtn');
   
   const dayModalTitleEl = document.getElementById('dayModalTitle');
   const dayEventsListEl = document.getElementById('dayEventsList');
@@ -374,6 +411,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (modal.style.display === 'block' && !modal.contains(event.target) &&
         !event.target.closest('.day-events-list li')) {
       modal.style.display = 'none';
+      removeOverlay();
+    }
+    
+    // Close create event modal when clicking outside
+    if (createEventModal.style.display === 'block' && !createEventModal.contains(event.target)) {
+      createEventModal.style.display = 'none';
       removeOverlay();
     }
     
@@ -637,38 +680,120 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.style.display = 'none';
     removeOverlay();
     
-    const newTitle = prompt('Edit title:', event.title);
-    if (newTitle === null) return;
-    const newDesc = prompt('Edit description:', event.extendedProps.description || '');
-
-    showLoading('Updating event...');
+    // Create a temporary modal for editing
+    const editModal = document.createElement('div');
+    editModal.id = 'editEventModal';
+    editModal.style.display = 'block';
+    editModal.style.position = 'fixed';
+    editModal.style.zIndex = '1000';
+    editModal.style.top = '50%';
+    editModal.style.left = '50%';
+    editModal.style.transform = 'translate(-50%, -50%)';
+    editModal.style.background = '#fff';
+    editModal.style.padding = '1rem';
+    editModal.style.border = '1px solid #ccc';
+    editModal.style.borderRadius = '8px';
+    editModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    editModal.style.minWidth = '300px';
+    editModal.style.maxWidth = '90%';
     
-    try {
-      const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        },
-        body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
-      });
-
-      hideLoading();
-      
-      if (!res.ok) throw new Error('Failed to update');
-      event.setProp('title', newTitle);
-      event.setExtendedProp('description', newDesc);
-      
-      // Update the dots for mobile view
-      if (isMobile) {
-        updateEventDots();
+    editModal.innerHTML = `
+      <h3>Edit Event</h3>
+      <div style="margin: 15px 0;">
+        <label for="editEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold;">Event Title:</label>
+        <input type="text" id="editEventTitle" value="${event.title}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
+      </div>
+      <div style="margin: 15px 0;">
+        <label for="editEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
+        <textarea id="editEventDesc" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; min-height: 80px;">${event.extendedProps.description || ''}</textarea>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="saveEditBtn" style="background-color: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Save</button>
+        <button id="cancelEditBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+      </div>
+    `;
+    
+    document.body.appendChild(editModal);
+    createOverlay();
+    
+    // Get references to edit modal elements
+    const editTitleInput = document.getElementById('editEventTitle');
+    const editDescInput = document.getElementById('editEventDesc');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    
+    // Focus on title
+    setTimeout(() => editTitleInput.focus(), 100);
+    
+    // Set up button handlers
+    saveEditBtn.onclick = async function() {
+      const newTitle = editTitleInput.value.trim();
+      if (!newTitle) {
+        showToast('Please enter an event title', 'error');
+        return;
       }
       
-      showToast('Event updated successfully!', 'success');
-    } catch (err) {
-      hideLoading();
-      showToast('Update error: ' + err.message, 'error');
-    }
+      const newDesc = editDescInput.value.trim();
+      
+      // Remove the temporary modal
+      editModal.style.display = 'none';
+      document.body.removeChild(editModal);
+      
+      showLoading('Updating event...');
+      
+      try {
+        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
+        });
+
+        hideLoading();
+        removeOverlay();
+        
+        if (!res.ok) throw new Error('Failed to update');
+        event.setProp('title', newTitle);
+        event.setExtendedProp('description', newDesc);
+        
+        // Update the dots for mobile view
+        if (isMobile) {
+          updateEventDots();
+        }
+        
+        showToast('Event updated successfully!', 'success');
+      } catch (err) {
+        hideLoading();
+        removeOverlay();
+        showToast('Update error: ' + err.message, 'error');
+      }
+    };
+    
+    cancelEditBtn.onclick = function() {
+      editModal.style.display = 'none';
+      document.body.removeChild(editModal);
+      removeOverlay();
+    };
+    
+    // Handle clicks outside the modal using a one-time event listener
+    const closeEditModalListener = function(e) {
+      if (editModal.style.display === 'block' && !editModal.contains(e.target)) {
+        editModal.style.display = 'none';
+        if (editModal.parentNode) {
+          document.body.removeChild(editModal);
+        }
+        removeOverlay();
+        // Remove this event listener once it's been triggered
+        document.removeEventListener('click', closeEditModalListener);
+      }
+    };
+    
+    // Add the event listener with a delay to prevent immediate triggering
+    setTimeout(() => {
+      document.addEventListener('click', closeEditModalListener);
+    }, 100);
   }
   
   // Function to delete an event
@@ -712,10 +837,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to prompt for new event creation
   async function createEventPrompt(dateStr) {
-    const title = prompt('Enter event title:');
-    if (!title) return;
-    const description = prompt('Enter event description (optional):') || '';
-
+    // Use modal instead of browser prompts
+    createOverlay();
+    
+    // Store the date for later use
+    createEventModal.dataset.date = dateStr;
+    
+    // Clear any previous values
+    newEventTitleInput.value = '';
+    newEventDescInput.value = '';
+    
+    // Show modal
+    createEventModal.style.display = 'block';
+    
+    // Focus on the title input
+    setTimeout(() => newEventTitleInput.focus(), 100);
+    
+    // Set up button handlers
+    saveNewEventBtn.onclick = saveNewEvent;
+    cancelNewEventBtn.onclick = () => {
+      createEventModal.style.display = 'none';
+      removeOverlay();
+    };
+  }
+  
+  // Function to save the new event
+  async function saveNewEvent() {
+    const title = newEventTitleInput.value.trim();
+    if (!title) {
+      showToast('Please enter an event title', 'error');
+      return;
+    }
+    
+    const description = newEventDescInput.value.trim();
+    const dateStr = createEventModal.dataset.date;
+    
+    // Hide modal
+    createEventModal.style.display = 'none';
+    
     showLoading('Creating event...');
     
     try {
@@ -731,6 +890,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const data = await res.json();
       
       hideLoading();
+      removeOverlay();
       
       if (!res.ok || !data.id) throw new Error('Failed to create event');
 
@@ -750,6 +910,7 @@ document.addEventListener('DOMContentLoaded', function () {
       showToast('Event created successfully!', 'success');
     } catch (err) {
       hideLoading();
+      removeOverlay();
       showToast('Create error: ' + err.message, 'error');
     }
   }
