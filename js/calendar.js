@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with dots loaded - FINAL VERSION - ' + new Date().toISOString());
+  console.log('Calendar with dots loaded - FINAL FIX VERSION - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -141,16 +141,23 @@ document.addEventListener('DOMContentLoaded', function () {
   const addEventBtn = document.getElementById('addEventBtn');
   const closeDayModalBtn = document.getElementById('closeDayModalBtn');
 
-  // Close modals when clicking outside
-  document.addEventListener('click', function (event) {
-    // Close event modal
+  // Add click handlers for non-modal elements in the document
+  document.addEventListener('click', function(event) {
+    // Handle clicks on calendar event elements
+    if (!isMobile && (event.target.classList.contains('fc-event') || 
+        event.target.closest('.fc-event'))) {
+      // Don't handle it here, it will be handled by FullCalendar's eventClick
+      return;
+    }
+    
+    // Close event modal when clicking outside
     if (modal.style.display === 'block' && !modal.contains(event.target) &&
         !event.target.closest('.day-events-list li')) {
       modal.style.display = 'none';
       removeOverlay();
     }
     
-    // Close day events modal
+    // Close day events modal when clicking outside
     if (dayEventsModal.style.display === 'block' && !dayEventsModal.contains(event.target) &&
         !event.target.closest('.fc-daygrid-day')) {
       dayEventsModal.style.display = 'none';
@@ -209,6 +216,11 @@ document.addEventListener('DOMContentLoaded', function () {
       right: 'prev,next'
     },
     
+    // Make sure event elements have appropriate cursor
+    eventDidMount: function(info) {
+      info.el.style.cursor = 'pointer';
+    },
+    
     dateClick: function(info) {
       if (isMobile) {
         showDayEventsModal(info.date, info.dateStr);
@@ -218,8 +230,10 @@ document.addEventListener('DOMContentLoaded', function () {
     },
 
     eventClick: function(info) {
-      const event = info.event;
-      showEventModal(event);
+      console.log('Event clicked:', info.event.title);
+      showEventModal(info.event);
+      // Prevent the default action
+      info.jsEvent.preventDefault();
     }
   });
 
@@ -482,6 +496,11 @@ document.addEventListener('DOMContentLoaded', function () {
       setTimeout(() => {
         updateEventDots();
       }, 100);
+      
+      // Make sure all event elements have cursor: pointer style
+      document.querySelectorAll('.fc-event').forEach(el => {
+        el.style.cursor = 'pointer';
+      });
     } catch (err) {
       const errorEl = document.getElementById('error');
       if (errorEl) {
