@@ -302,6 +302,30 @@ function hideLoading() {
   }
 }
 
+// Add visible debug indicator on the page
+(function() {
+  const debugEl = document.createElement('div');
+  debugEl.style.position = 'fixed';
+  debugEl.style.bottom = '5px';
+  debugEl.style.left = '5px';
+  debugEl.style.backgroundColor = 'rgba(0,0,0,0.7)';
+  debugEl.style.color = 'white';
+  debugEl.style.padding = '4px 8px';
+  debugEl.style.fontSize = '10px';
+  debugEl.style.borderRadius = '4px';
+  debugEl.style.zIndex = '9999';
+  debugEl.textContent = 'DEBUG:1 - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
+  
+  // Wait for DOM to be fully loaded
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    document.body.appendChild(debugEl);
+  } else {
+    window.addEventListener('DOMContentLoaded', function() {
+      document.body.appendChild(debugEl);
+    });
+  }
+})();
+
   // Force FullCalendar to ignore screen size and always use full month view
   window.matchMedia = () => ({
     matches: false,
