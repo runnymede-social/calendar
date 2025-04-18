@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with loading feedback - ' + new Date().toISOString());
+  console.log('Calendar with MUCH larger desktop size - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -17,18 +17,45 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   let isMobile = window.innerWidth < 768;
 
-  // Add style for event dots, loading indicators, and mobile-specific styles
-  const style = document.createElement('style');
-  style.textContent = `
-    /* Desktop styles */
-    #calendar {
-      height: 750px !important; /* Make calendar larger on desktop */
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    .fc-daygrid-day {
-      min-height: 120px; /* Taller day cells */
+  // First, apply extra CSS styles specifically for desktop and loading indicators
+  const forceDesktopStyles = document.createElement('style');
+  forceDesktopStyles.textContent = `
+    /* IMPORTANT: Ensure desktop styles are applied strongly */
+    @media (min-width: 769px) {
+      #calendar {
+        min-height: 800px !important;
+        height: 800px !important;
+        max-width: 1200px !important;
+        margin: 0 auto !important;
+      }
+      
+      .fc-view-harness {
+        min-height: 700px !important;
+      }
+      
+      .fc .fc-daygrid-day {
+        min-height: 120px !important;
+        height: 120px !important;
+      }
+      
+      .fc-daygrid-day-frame {
+        min-height: 120px !important;
+      }
+      
+      /* Force larger calendar on desktop */
+      .fc-view-harness, .fc-view-harness-active, .fc-daygrid {
+        height: auto !important;
+        min-height: 700px !important;
+      }
+      
+      .fc-scrollgrid, .fc-scrollgrid-liquid {
+        height: 100% !important;
+      }
+      
+      .fc-scroller {
+        overflow: visible !important;
+        height: auto !important;
+      }
     }
     
     /* Loading indicator styles */
@@ -150,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   `;
-  document.head.appendChild(style);
+  document.head.appendChild(forceDesktopStyles);
 
   // Create modal for showing event details
   const modal = document.createElement('div');
@@ -333,10 +360,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize calendar
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
-    height: isMobile ? 'auto' : 750, // Larger height on desktop
-    contentHeight: isMobile ? 600 : 750, // Larger height on desktop
+    height: isMobile ? 'auto' : 800, // MUCH Larger height on desktop
+    contentHeight: isMobile ? 600 : 800, // MUCH Larger height on desktop
     aspectRatio: isMobile ? 1.35 : 1.5, // Different aspect ratio for desktop
     expandRows: true,
+    stickyHeaderDates: false, // Disable sticky headers for better sizing
     selectable: true,
     editable: false,
     eventDisplay: 'block',
@@ -344,7 +372,7 @@ document.addEventListener('DOMContentLoaded', function () {
     views: {
       dayGridMonth: {
         type: 'dayGridMonth',
-        dayMaxEventRows: isMobile ? true : 4 // Show more events on desktop
+        dayMaxEventRows: isMobile ? true : 5 // Show more events on desktop
       }
     },
     titleFormat: { year: 'numeric', month: 'long' },
@@ -627,16 +655,38 @@ document.addEventListener('DOMContentLoaded', function () {
         updateEventDots();
       } else {
         // Switched to desktop - remove dots and increase calendar size
-        calendar.setOption('height', 750);
-        calendar.setOption('contentHeight', 750);
+        calendar.setOption('height', 800);
+        calendar.setOption('contentHeight', 800);
         calendar.setOption('aspectRatio', 1.5);
         const existingDots = document.querySelectorAll('.event-dot');
         existingDots.forEach(dot => dot.remove());
       }
+      
+      // Force redraw
+      setTimeout(() => {
+        calendar.updateSize();
+      }, 10);
     }
     
     calendar.updateSize();
   });
+
+  // Apply function to force calendar size after render
+  function forceCalendarSize() {
+    if (!isMobile) {
+      // Force calendar to be large on desktop
+      calendarEl.style.height = '800px';
+      
+      // Select all relevant container elements and force them to be large
+      const viewHarness = document.querySelector('.fc-view-harness');
+      if (viewHarness) viewHarness.style.height = '750px';
+      
+      const dayCells = document.querySelectorAll('.fc-daygrid-day');
+      dayCells.forEach(cell => {
+        cell.style.minHeight = '120px';
+      });
+    }
+  }
 
   // Load events and render calendar
   (async () => {
@@ -660,10 +710,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
       calendar.render();
       
+      // Apply force sizing after render
+      forceCalendarSize();
+      
       // After the calendar is rendered, add dots to days with events
       setTimeout(() => {
         updateEventDots();
         hideLoading();
+        
+        // Force resize one more time after a delay
+        forceCalendarSize();
       }, 100);
       
       // Make sure all event elements have cursor: pointer style
@@ -681,4 +737,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   })();
+  
+  // Apply one final resize after everything else has loaded
+  window.addEventListener('load', function() {
+    setTimeout(forceCalendarSize, 200);
+  });
 });
