@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with dots loaded - Version 2 - ' + new Date().toISOString());
+  console.log('Calendar with dots loaded - FINAL VERSION - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   let isMobile = window.innerWidth < 768;
 
-  // Add style for event dots
+  // Add style for event dots and mobile-specific styles
   const style = document.createElement('style');
   style.textContent = `
     /* Mobile specific styles */
