@@ -390,6 +390,14 @@ document.addEventListener('DOMContentLoaded', function () {
         height: auto !important;
         margin: 10px !important;
         border-radius: var(--border-radius) !important;
+        width: calc(100% - 20px) !important; /* Fix width issue */
+        border: 1px solid #e0e0e0 !important; /* Add border for mobile */
+        box-shadow: var(--box-shadow) !important;
+      }
+      
+      /* Ensure table fills container */
+      .fc-scrollgrid {
+        width: 100% !important;
       }
       
       .fc-daygrid-day {
@@ -428,25 +436,25 @@ document.addEventListener('DOMContentLoaded', function () {
         padding: 12px;
         border-radius: var(--event-radius);
         list-style-type: none;
-        border-left: 5px solid var(--primary-color);
+        border-left: 5px solid var(--primary-color) !important; /* Ensure border shows up */
         transition: var(--transition);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       }
       
       .day-events-list li:nth-of-type(4n+1) {
-        border-left-color: var(--primary-color);
+        border-left-color: var(--primary-color) !important;
       }
       
       .day-events-list li:nth-of-type(4n+2) {
-        border-left-color: var(--accent-color-1);
+        border-left-color: var(--accent-color-1) !important;
       }
       
       .day-events-list li:nth-of-type(4n+3) {
-        border-left-color: var(--accent-color-2);
+        border-left-color: var(--accent-color-2) !important;
       }
       
       .day-events-list li:nth-of-type(4n+4) {
-        border-left-color: var(--secondary-color);
+        border-left-color: var(--secondary-color) !important;
       }
       
       .day-events-list li:hover {
