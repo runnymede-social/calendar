@@ -516,6 +516,17 @@ document.addEventListener('DOMContentLoaded', function () {
       right: 'prev,next'
     },
     
+    // Added callback for when dates change (like changing months)
+    datesSet: function() {
+      // This gets called whenever the calendar changes date/view
+      if (isMobile) {
+        // Update the event dots when month changes
+        setTimeout(() => {
+          updateEventDots();
+        }, 100); // Small delay to ensure DOM is updated
+      }
+    },
+    
     // Make sure event elements have appropriate cursor
     eventDidMount: function(info) {
       info.el.style.cursor = 'pointer';
