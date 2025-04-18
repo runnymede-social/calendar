@@ -62,10 +62,12 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Mobile specific logout button */
     @media (max-width: 768px) {
       #logoutContainer {
-        position: relative;
+        position: absolute;
         text-align: right;
         margin-bottom: 10px;
-        right: 0;
+        right: 15px;
+        top: 10px;
+        z-index: 100;
       }
       
       #logoutBtn {
@@ -273,14 +275,8 @@ document.addEventListener('DOMContentLoaded', function () {
     </button>
   `;
   
-  // Insert logout button in the appropriate place depending on mobile/desktop
-  if (isMobile) {
-    // For mobile, add at the top of the calendar container
-    calendarEl.parentNode.insertBefore(logoutContainer, calendarEl);
-  } else {
-    // For desktop, add at the top right of the page
-    document.body.insertBefore(logoutContainer, document.body.firstChild);
-  }
+  // Always add logout button to the top of the body for consistent positioning
+  document.body.insertBefore(logoutContainer, document.body.firstChild);
   
   // Add logout functionality
   document.getElementById('logoutBtn').addEventListener('click', function() {
