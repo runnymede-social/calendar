@@ -1,7 +1,7 @@
                              Frontend
                ┌──────────────────────────────┐
                │      User Web Browser        │
-               │  (Mobile / Desktop FullCalendar) │
+               │(Mobile/Desktop FullCalendar) │
                └────────────┬─────────────────┘
                             │
                     loads static frontend
