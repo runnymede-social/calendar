@@ -735,6 +735,7 @@ document.addEventListener('DOMContentLoaded', function () {
       
       const newDesc = editDescInput.value.trim();
       
+      // Remove the temporary modal
       editModal.style.display = 'none';
       document.body.removeChild(editModal);
       
@@ -776,15 +777,23 @@ document.addEventListener('DOMContentLoaded', function () {
       removeOverlay();
     };
     
-    // Handle clicks outside the modal
-    document.addEventListener('click', function closeEditModal(event) {
-      if (editModal.style.display === 'block' && !editModal.contains(event.target)) {
+    // Handle clicks outside the modal using a one-time event listener
+    const closeEditModalListener = function(e) {
+      if (editModal.style.display === 'block' && !editModal.contains(e.target)) {
         editModal.style.display = 'none';
-        document.body.removeChild(editModal);
+        if (editModal.parentNode) {
+          document.body.removeChild(editModal);
+        }
         removeOverlay();
-        document.removeEventListener('click', closeEditModal);
+        // Remove this event listener once it's been triggered
+        document.removeEventListener('click', closeEditModalListener);
       }
-    });
+    };
+    
+    // Add the event listener with a delay to prevent immediate triggering
+    setTimeout(() => {
+      document.addEventListener('click', closeEditModalListener);
+    }, 100);
   }
   
   // Function to delete an event
