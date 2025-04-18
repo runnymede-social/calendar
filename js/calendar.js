@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
+  console.log('Calendar with dots loaded - Version 2 - ' + new Date().toISOString());
+  
   const token = localStorage.getItem('calendarToken');
   if (!token) {
     window.location.href = 'index.html';
     return;
   }
 
-  // 🔒 Force FullCalendar to ignore screen size and always use full month view
+  // Force FullCalendar to ignore screen size and always use full month view
   window.matchMedia = () => ({
     matches: false,
     addListener: () => {},
@@ -15,59 +17,34 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   let isMobile = window.innerWidth < 768;
 
-  // Add mobile-specific styles for the calendar
+  // Add style for event dots
   const style = document.createElement('style');
   style.textContent = `
+    /* Mobile specific styles */
     @media (max-width: 768px) {
-      .fc-view-harness {
-        min-height: 500px !important;
-      }
-      .fc-toolbar {
-        flex-direction: column;
-        gap: 10px;
-      }
-      .fc-toolbar-chunk {
-        display: flex;
-        justify-content: center;
-      }
-      .fc-col-header-cell-cushion,
-      .fc-daygrid-day-number {
-        font-size: 0.9rem;
-      }
-      .fc-daygrid-day-events {
-        min-height: 20px;
-      }
-      /* Hide event text on mobile, just show dots */
       .fc-daygrid-event {
         display: none !important;
-      }
-      /* Show colored dots for days with events */
-      .has-events::after {
-        content: '';
-        display: block;
-        width: 8px;
-        height: 8px;
-        background-color: #3498db;
-        border-radius: 50%;
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
       }
       .fc-daygrid-day-top {
         justify-content: center !important;
       }
       .fc-daygrid-day-number {
         float: none !important;
-        padding-right: 0 !important;
       }
-      #eventModal {
+      .event-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #3498db;
+        border-radius: 50%;
+        margin: 4px auto;
+        display: block;
+      }
+      #calendar .fc-daygrid-body {
+        width: 100% !important;
+      }
+      #eventModal, #dayEventsModal {
         width: 90% !important;
         max-width: 350px;
-      }
-      #calendar {
-        width: 100% !important;
-        height: auto !important;
       }
       .day-events-list {
         margin-top: 10px;
@@ -93,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
   `;
   document.head.appendChild(style);
 
-  // 🛠️ SAFELY ATTACH MODAL TO BODY
+  // Create modal for showing event details
   const modal = document.createElement('div');
   modal.id = 'eventModal';
   modal.style.display = 'none';
@@ -139,11 +116,6 @@ document.addEventListener('DOMContentLoaded', function () {
   
   document.body.appendChild(dayEventsModal);
   
-  const dayModalTitleEl = document.getElementById('dayModalTitle');
-  const dayEventsListEl = document.getElementById('dayEventsList');
-  const addEventBtn = document.getElementById('addEventBtn');
-  const closeDayModalBtn = document.getElementById('closeDayModalBtn');
-  
   // Regular event modal content
   modal.innerHTML = `
     <h3 id="modalTitle"></h3>
@@ -157,39 +129,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.body.appendChild(modal);
 
+  // Get references to modal elements
   const modalTitleEl = document.getElementById('modalTitle');
   const modalDescEl = document.getElementById('modalDesc');
   const editBtn = document.getElementById('editBtn');
   const deleteBtn = document.getElementById('deleteBtn');
   const closeBtn = document.getElementById('closeBtn');
+  
+  const dayModalTitleEl = document.getElementById('dayModalTitle');
+  const dayEventsListEl = document.getElementById('dayEventsList');
+  const addEventBtn = document.getElementById('addEventBtn');
+  const closeDayModalBtn = document.getElementById('closeDayModalBtn');
 
   // Close modals when clicking outside
   document.addEventListener('click', function (event) {
     // Close event modal
     if (modal.style.display === 'block' && !modal.contains(event.target) &&
-      event.target.className !== 'fc-event-title' &&
-      !event.target.closest('.fc-event') &&
-      !event.target.closest('.day-events-list li')) {
+        !event.target.closest('.day-events-list li')) {
       modal.style.display = 'none';
-      const overlay = document.getElementById('modalOverlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
+      removeOverlay();
     }
     
     // Close day events modal
     if (dayEventsModal.style.display === 'block' && !dayEventsModal.contains(event.target) &&
-      !event.target.closest('.fc-daygrid-day')) {
+        !event.target.closest('.fc-daygrid-day')) {
       dayEventsModal.style.display = 'none';
-      const overlay = document.getElementById('modalOverlay');
-      if (overlay) {
-        document.body.removeChild(overlay);
-      }
+      removeOverlay();
     }
   });
 
-  // Function to create overlay
+  // Helper functions for overlay
   function createOverlay() {
+    const existingOverlay = document.getElementById('modalOverlay');
+    if (existingOverlay) {
+      return existingOverlay;
+    }
+    
     const overlay = document.createElement('div');
     overlay.id = 'modalOverlay';
     overlay.style.position = 'fixed';
@@ -203,7 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return overlay;
   }
   
-  // Function to remove overlay
   function removeOverlay() {
     const overlay = document.getElementById('modalOverlay');
     if (overlay) {
@@ -211,11 +185,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Initialize calendar
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     height: 'auto',
-    contentHeight: 600, // Ensures minimum height
-    aspectRatio: 1.35,  // Controls width-to-height ratio
+    contentHeight: 600,
+    aspectRatio: 1.35,
     expandRows: true,
     selectable: true,
     editable: false,
@@ -228,190 +203,174 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     titleFormat: { year: 'numeric', month: 'long' },
-    dayCellClassNames: () => ['custom-day-cell'],
     headerToolbar: {
       left: 'title',
       center: '',
       right: 'prev,next'
     },
     
-    // Add dots to days with events - this doesn't work with FullCalendar's dayCellDidMount
-    // Instead we'll use eventDidMount to mark days with events
-    eventDidMount: function(info) {
+    dateClick: function(info) {
       if (isMobile) {
-        // Mark the day cell as having events
-        const dayEl = info.el.closest('.fc-daygrid-day');
-        if (dayEl) {
-          dayEl.classList.add('has-events');
-        }
-      }
-    },
-
-    dateClick: async function (info) {
-      if (isMobile) {
-        // On mobile, show day events modal instead of creating event directly
-        const clickedDate = info.date;
-        const dateStr = clickedDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-        
-        dayModalTitleEl.textContent = dateStr;
-        
-        // Get events for this day
-        const dayEvents = calendar.getEvents().filter(event => {
-          const eventStart = new Date(event.start);
-          return eventStart.toDateString() === clickedDate.toDateString();
-        });
-        
-        // Clear existing list
-        dayEventsListEl.innerHTML = '';
-        
-        // Add events to list
-        if (dayEvents.length > 0) {
-          dayEvents.forEach(event => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <div class="event-title">${event.title}</div>
-              <div class="event-description">${event.extendedProps.description || '(No description)'}</div>
-            `;
-            
-            // Add click handler to open event details
-            li.addEventListener('click', function() {
-              // Hide day events modal
-              dayEventsModal.style.display = 'none';
-              
-              // Show event modal
-              createOverlay();
-              modalTitleEl.textContent = event.title;
-              modalDescEl.textContent = event.extendedProps.description || '(No description)';
-              modal.style.display = 'block';
-              
-              // Set up edit and delete handlers for this event
-              setupEventModalHandlers(event);
-            });
-            
-            dayEventsListEl.appendChild(li);
-          });
-        } else {
-          const li = document.createElement('li');
-          li.textContent = 'No events for this day';
-          dayEventsListEl.appendChild(li);
-        }
-        
-        // Set up add event button
-        addEventBtn.onclick = () => {
-          // Hide day events modal
-          dayEventsModal.style.display = 'none';
-          removeOverlay();
-          
-          // Show prompt to create event
-          createEventPrompt(info.dateStr);
-        };
-        
-        // Set up close button
-        closeDayModalBtn.onclick = () => {
-          dayEventsModal.style.display = 'none';
-          removeOverlay();
-        };
-        
-        // Show day events modal
-        createOverlay();
-        dayEventsModal.style.display = 'block';
+        showDayEventsModal(info.date, info.dateStr);
       } else {
-        // On desktop, use original behavior - prompt for new event
         createEventPrompt(info.dateStr);
       }
     },
 
-    eventClick: function (info) {
+    eventClick: function(info) {
       const event = info.event;
-
-      if (!modalTitleEl || !modalDescEl) {
-        console.error('❌ Modal elements not found!');
-        return;
-      }
-
-      createOverlay();
-      modalTitleEl.textContent = event.title;
-      modalDescEl.textContent = event.extendedProps.description || '(No description)';
-      modal.style.display = 'block';
-      
-      setupEventModalHandlers(event);
+      showEventModal(event);
     }
   });
-  
-  // Function to set up event modal handlers
-  function setupEventModalHandlers(event) {
-    editBtn.onclick = async () => {
-      modal.style.display = 'none';
-      removeOverlay();
-      
-      const newTitle = prompt('Edit title:', event.title);
-      if (newTitle === null) return;
-      const newDesc = prompt('Edit description:', event.extendedProps.description || '');
 
-      try {
-        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token
-          },
-          body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
-        });
+  // Function to show event modal
+  function showEventModal(event) {
+    if (!modalTitleEl || !modalDescEl) {
+      console.error('❌ Modal elements not found!');
+      return;
+    }
 
-        if (!res.ok) throw new Error('Failed to update');
-        event.setProp('title', newTitle);
-        event.setExtendedProp('description', newDesc);
-        
-        // Refresh calendar to update dots if on mobile
-        if (isMobile) {
-          calendar.render();
-        }
-      } catch (err) {
-        alert('Update error: ' + err.message);
-      }
-    };
-
-    deleteBtn.onclick = async () => {
-      if (confirm('Are you sure you want to delete this event?')) {
-        try {
-          const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + token
-            },
-            body: JSON.stringify({ id: event.id })
-          });
-
-          if (!res.ok) throw new Error('Failed to delete event');
-          
-          // Remove event from calendar
-          event.remove();
-          
-          // Close modal
-          modal.style.display = 'none';
-          removeOverlay();
-          
-          // Refresh calendar to update dots if on mobile
-          if (isMobile) {
-            calendar.render();
-          }
-        } catch (err) {
-          alert('Delete error: ' + err.message);
-        }
-      }
-    };
-
+    createOverlay();
+    modalTitleEl.textContent = event.title;
+    modalDescEl.textContent = event.extendedProps.description || '(No description)';
+    modal.style.display = 'block';
+    
+    // Set up event handlers
+    editBtn.onclick = () => editEvent(event);
+    deleteBtn.onclick = () => deleteEvent(event);
     closeBtn.onclick = () => {
       modal.style.display = 'none';
       removeOverlay();
     };
   }
   
+  // Function to show day events modal
+  function showDayEventsModal(date, dateStr) {
+    const formattedDate = date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    dayModalTitleEl.textContent = formattedDate;
+    
+    // Get events for this day
+    const dayEvents = calendar.getEvents().filter(event => {
+      const eventStart = new Date(event.start);
+      return eventStart.toDateString() === date.toDateString();
+    });
+    
+    // Clear existing list
+    dayEventsListEl.innerHTML = '';
+    
+    // Add events to list
+    if (dayEvents.length > 0) {
+      dayEvents.forEach(event => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="event-title">${event.title}</div>
+          <div class="event-description">${event.extendedProps.description || '(No description)'}</div>
+        `;
+        
+        // Add click handler to open event details
+        li.addEventListener('click', function() {
+          // Hide day events modal
+          dayEventsModal.style.display = 'none';
+          
+          // Show event modal
+          showEventModal(event);
+        });
+        
+        dayEventsListEl.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'No events for this day';
+      dayEventsListEl.appendChild(li);
+    }
+    
+    // Set up add event button
+    addEventBtn.onclick = () => {
+      dayEventsModal.style.display = 'none';
+      removeOverlay();
+      createEventPrompt(dateStr);
+    };
+    
+    // Set up close button
+    closeDayModalBtn.onclick = () => {
+      dayEventsModal.style.display = 'none';
+      removeOverlay();
+    };
+    
+    // Show modal
+    createOverlay();
+    dayEventsModal.style.display = 'block';
+  }
+  
+  // Function to edit an event
+  async function editEvent(event) {
+    modal.style.display = 'none';
+    removeOverlay();
+    
+    const newTitle = prompt('Edit title:', event.title);
+    if (newTitle === null) return;
+    const newDesc = prompt('Edit description:', event.extendedProps.description || '');
+
+    try {
+      const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
+      });
+
+      if (!res.ok) throw new Error('Failed to update');
+      event.setProp('title', newTitle);
+      event.setExtendedProp('description', newDesc);
+      
+      // Update the dots for mobile view
+      if (isMobile) {
+        updateEventDots();
+      }
+    } catch (err) {
+      alert('Update error: ' + err.message);
+    }
+  }
+  
+  // Function to delete an event
+  async function deleteEvent(event) {
+    if (confirm('Are you sure you want to delete this event?')) {
+      try {
+        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: event.id })
+        });
+
+        if (!res.ok) throw new Error('Failed to delete event');
+        
+        // Remove event from calendar
+        event.remove();
+        
+        // Close modal
+        modal.style.display = 'none';
+        removeOverlay();
+        
+        // Update the dots for mobile view
+        if (isMobile) {
+          updateEventDots();
+        }
+      } catch (err) {
+        alert('Delete error: ' + err.message);
+      }
+    }
+  }
+
   // Function to prompt for new event creation
   async function createEventPrompt(dateStr) {
     const title = prompt('Enter event title:');
@@ -439,28 +398,67 @@ document.addEventListener('DOMContentLoaded', function () {
         extendedProps: { description }
       });
       
-      // Refresh calendar to update dots if on mobile
+      // Update the dots for mobile view
       if (isMobile) {
-        calendar.render();
+        updateEventDots();
       }
     } catch (err) {
       alert('Create error: ' + err.message);
     }
   }
+  
+  // Function to add dots to days with events
+  function updateEventDots() {
+    if (!isMobile) return;
+    
+    // First, remove any existing dots
+    const existingDots = document.querySelectorAll('.event-dot');
+    existingDots.forEach(dot => dot.remove());
+    
+    // Create a map of dates that have events
+    const eventDates = {};
+    calendar.getEvents().forEach(event => {
+      // Format date as YYYY-MM-DD for comparison
+      const dateStr = new Date(event.start).toISOString().split('T')[0];
+      eventDates[dateStr] = true;
+    });
+    
+    // Add dots to each day that has events
+    document.querySelectorAll('.fc-daygrid-day').forEach(dayEl => {
+      const dateAttr = dayEl.getAttribute('data-date');
+      if (eventDates[dateAttr]) {
+        // Add a dot to this day cell
+        const dayCell = dayEl.querySelector('.fc-daygrid-day-bottom');
+        if (dayCell) {
+          const dot = document.createElement('div');
+          dot.className = 'event-dot';
+          dayCell.appendChild(dot);
+        }
+      }
+    });
+  }
 
-  // Handle window resize to force calendar redraw and update mobile state
+  // Handle window resize to update mobile state
   window.addEventListener('resize', function() {
     const wasIsMobile = isMobile;
     isMobile = window.innerWidth < 768;
     
-    // If mobile state changed, need to re-render
+    // If mobile state changed, need to update the UI
     if (wasIsMobile !== isMobile) {
-      calendar.render();
+      if (isMobile) {
+        // Switched to mobile - add dots
+        updateEventDots();
+      } else {
+        // Switched to desktop - remove dots
+        const existingDots = document.querySelectorAll('.event-dot');
+        existingDots.forEach(dot => dot.remove());
+      }
     }
     
     calendar.updateSize();
   });
 
+  // Load events and render calendar
   (async () => {
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
@@ -480,9 +478,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
       calendar.render();
       
-      // Force an update after a slight delay to ensure proper rendering
+      // After the calendar is rendered, add dots to days with events
       setTimeout(() => {
-        calendar.updateSize();
+        updateEventDots();
       }, 100);
     } catch (err) {
       const errorEl = document.getElementById('error');
