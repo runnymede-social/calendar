@@ -26,79 +26,257 @@ document.addEventListener('DOMContentLoaded', function () {
   // First, apply extra CSS styles including logout button styling
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
-    /* Prevent zooming and text size adjustment */
-    input, textarea, select, button {
-      font-size: 16px !important; /* Prevents iOS zoom on focus */
+    /* Modern Calendar Theme - Updated Styles */
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3a0ca3;
+      --accent-color-1: #7209b7;
+      --accent-color-2: #f72585;
+      --accent-color-3: #4cc9f0;
+      --light-color: #f8f9fa;
+      --dark-color: #212529;
+      --border-radius: 12px;
+      --event-radius: 6px;
+      --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s ease;
+    }
+    
+    body {
+      background-color: var(--light-color);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    /* Calendar container styling */
+    #calendar {
+      border-radius: var(--border-radius) !important;
+      overflow: hidden !important;
+      box-shadow: var(--box-shadow) !important;
+      background-color: white !important;
+      border: none !important;
+    }
+    
+    /* Calendar header styling */
+    .fc-header-toolbar {
+      padding: 16px !important;
+      background: white !important;
+    }
+    
+    .fc-toolbar-title {
+      font-weight: 700 !important;
+      color: var(--dark-color) !important;
+    }
+    
+    /* Navigation buttons */
+    .fc-button-primary {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      border-radius: var(--event-radius) !important;
+      transition: var(--transition) !important;
+      box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3) !important;
+    }
+    
+    .fc-button-primary:hover {
+      background-color: #3b54d3 !important;
+      border-color: #3b54d3 !important;
+    }
+    
+    /* Calendar table styling */
+    .fc-scrollgrid {
+      border: none !important;
+    }
+    
+    .fc-col-header {
+      background-color: white !important;
+    }
+    
+    .fc-col-header-cell {
+      padding: 10px 0 !important;
+      font-weight: 600 !important;
+      color: var(--dark-color) !important;
+    }
+    
+    .fc-daygrid-day {
+      transition: var(--transition) !important;
+    }
+    
+    .fc-daygrid-day:hover {
+      background-color: rgba(76, 201, 240, 0.1) !important;
+    }
+    
+    .fc-daygrid-day-number {
+      font-weight: 500 !important;
+      color: var(--dark-color) !important;
+      padding: 8px !important;
+    }
+    
+    /* Today highlighting */
+    .fc-day-today {
+      background-color: rgba(76, 201, 240, 0.15) !important;
+    }
+    
+    .fc-day-today .fc-daygrid-day-number {
+      background-color: var(--accent-color-3) !important;
+      color: white !important;
+      border-radius: 50% !important;
+      width: 30px !important;
+      height: 30px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin: 5px !important;
+    }
+    
+    /* Event styling */
+    .fc-event {
+      border-radius: var(--event-radius) !important;
+      border: none !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+      transition: var(--transition) !important;
+    }
+    
+    .fc-event:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* Colorful events by type - auto-assigned colors */
+    .fc-event:nth-of-type(4n+1) {
+      background-color: var(--primary-color) !important;
+    }
+    
+    .fc-event:nth-of-type(4n+2) {
+      background-color: var(--accent-color-1) !important;
+    }
+    
+    .fc-event:nth-of-type(4n+3) {
+      background-color: var(--accent-color-2) !important;
+    }
+    
+    .fc-event:nth-of-type(4n+4) {
+      background-color: var(--secondary-color) !important;
+    }
+    
+    /* Event dots for mobile */
+    .event-dot {
+      width: 10px !important;
+      height: 10px !important;
+      border-radius: 50% !important;
+      margin: 4px auto !important;
+      display: block !important;
+      background-color: var(--primary-color) !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .event-dot:nth-of-type(4n+1) {
+      background-color: var(--primary-color) !important;
+    }
+    
+    .event-dot:nth-of-type(4n+2) {
+      background-color: var(--accent-color-1) !important;
+    }
+    
+    .event-dot:nth-of-type(4n+3) {
+      background-color: var(--accent-color-2) !important;
+    }
+    
+    .event-dot:nth-of-type(4n+4) {
+      background-color: var(--secondary-color) !important;
+    }
+    
+    /* Modal styling */
+    #eventModal, #createEventModal, #dayEventsModal, #editEventModal, #confirmDeleteModal {
+      border-radius: var(--border-radius) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+      border: none !important;
+    }
+    
+    /* Form inputs */
+    input, textarea {
+      border-radius: var(--event-radius) !important;
+      border: 1px solid #dee2e6 !important;
+      padding: 10px 12px !important;
+      transition: var(--transition) !important;
+    }
+    
+    input:focus, textarea:focus {
+      border-color: var(--primary-color) !important;
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2) !important;
+      outline: none !important;
+    }
+    
+    /* Buttons styling */
+    button {
+      border-radius: var(--event-radius) !important;
+      padding: 8px 16px !important;
+      font-weight: 500 !important;
+      transition: var(--transition) !important;
     }
     
     /* Logout button styles */
     #logoutContainer {
       position: absolute;
       right: 15px;
+      top: 15px;
       z-index: 100;
     }
     
     #logoutBtn {
-      background-color: #f2f2f2;
-      color: #333;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      transition: background-color 0.2s;
+      background-color: white !important;
+      color: var(--dark-color) !important;
+      border: none !important;
+      padding: 8px 15px !important;
+      border-radius: var(--event-radius) !important;
+      cursor: pointer !important;
+      font-size: 14px !important;
+      display: flex !important;
+      align-items: center !important;
+      transition: var(--transition) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     }
     
     #logoutBtn:hover {
-      background-color: #e6e6e6;
+      background-color: #f8f9fa !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     }
     
     #logoutBtn svg {
       margin-right: 5px;
     }
     
-    /* Mobile specific logout button */
-    @media (max-width: 768px) {
-      #logoutContainer {
-        position: absolute;
-        text-align: right;
-        margin-bottom: 10px;
-        right: 15px;
-        top: 10px;
-        z-index: 100;
-      }
-      
-      #logoutBtn {
-        font-size: 12px;
-        padding: 6px 10px;
-      }
-      
-      /* Hide text on very small screens */
-      @media (max-width: 400px) {
-        #logoutBtnText {
-          display: none;
-        }
-        
-        #logoutBtn svg {
-          margin-right: 0;
-        }
-      }
-    }
-    
     /* Button styles */
-    #deleteBtn {
-      background-color: #ff4d4d !important; 
+    #deleteBtn, #confirmDeleteBtn {
+      background-color: var(--accent-color-2) !important; 
       color: white !important;
       border: none !important;
       padding: 8px 12px !important;
-      border-radius: 4px !important;
+      border-radius: var(--event-radius) !important;
       cursor: pointer !important;
+      box-shadow: 0 2px 6px rgba(247, 37, 133, 0.3) !important;
     }
     
-    #deleteBtn:hover {
-      background-color: #ff3333 !important;
+    #deleteBtn:hover, #confirmDeleteBtn:hover {
+      background-color: #e91f7a !important;
+    }
+    
+    #editBtn, #addEventBtn, #saveNewEventBtn, #saveEditBtn {
+      background-color: var(--primary-color) !important;
+      color: white !important;
+      border: none !important;
+      box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3) !important;
+    }
+    
+    #editBtn:hover, #addEventBtn:hover, #saveNewEventBtn:hover, #saveEditBtn:hover {
+      background-color: #3b54d3 !important;
+    }
+    
+    #closeBtn, #cancelNewEventBtn, #closeDayModalBtn, #cancelEditBtn, #cancelDeleteBtn {
+      background-color: #f2f2f2 !important;
+      color: var(--dark-color) !important;
+      border: none !important;
+    }
+    
+    #closeBtn:hover, #cancelNewEventBtn:hover, #closeDayModalBtn:hover, #cancelEditBtn:hover, #cancelDeleteBtn:hover {
+      background-color: #e6e6e6 !important;
     }
     
     /* IMPORTANT: Ensure desktop styles are applied strongly */
@@ -107,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
         min-height: 800px !important;
         height: 800px !important;
         max-width: 1200px !important;
-        margin: 0 auto !important;
+        margin: 20px auto !important;
       }
       
       .fc-view-harness {
@@ -146,19 +324,20 @@ document.addEventListener('DOMContentLoaded', function () {
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(255,255,255,0.7);
+      background-color: rgba(255,255,255,0.8);
       z-index: 2000;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
+      backdrop-filter: blur(3px);
     }
     
     .loading-spinner {
       width: 50px;
       height: 50px;
-      border: 5px solid #f3f3f3;
-      border-top: 5px solid #3498db;
+      border: 3px solid rgba(67, 97, 238, 0.1);
+      border-top: 3px solid var(--primary-color);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 15px;
@@ -166,7 +345,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     .loading-text {
       font-size: 18px;
-      color: #333;
+      color: var(--dark-color);
+      font-weight: 500;
     }
     
     @keyframes spin {
@@ -180,14 +360,16 @@ document.addEventListener('DOMContentLoaded', function () {
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: #333;
+      background-color: var(--dark-color);
       color: white;
       padding: 12px 24px;
-      border-radius: 4px;
+      border-radius: var(--event-radius);
       font-size: 16px;
+      font-weight: 500;
       z-index: 2000;
       opacity: 0;
       transition: opacity 0.3s ease-in-out;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     }
     
     .toast.show {
@@ -199,13 +381,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     .toast.error {
-      background-color: #f44336;
+      background-color: var(--accent-color-2);
     }
     
     /* Mobile specific styles */
     @media (max-width: 768px) {
       #calendar {
         height: auto !important;
+        margin: 10px !important;
+        border-radius: var(--border-radius) !important;
       }
       
       .fc-daygrid-day {
@@ -215,46 +399,70 @@ document.addEventListener('DOMContentLoaded', function () {
       .fc-daygrid-event {
         display: none !important;
       }
+      
       .fc-daygrid-day-top {
         justify-content: center !important;
       }
+      
       .fc-daygrid-day-number {
         float: none !important;
       }
-      .event-dot {
-        width: 8px;
-        height: 8px;
-        background-color: #3498db;
-        border-radius: 50%;
-        margin: 4px auto;
-        display: block;
-      }
+      
       #calendar .fc-daygrid-body {
         width: 100% !important;
       }
-      #eventModal, #dayEventsModal {
+      
+      #eventModal, #dayEventsModal, #createEventModal, #editEventModal, #confirmDeleteModal {
         width: 90% !important;
         max-width: 350px;
       }
+      
       .day-events-list {
         margin-top: 10px;
         padding-left: 0;
       }
+      
       .day-events-list li {
-        background: #f5f7fa;
-        margin-bottom: 5px;
-        padding: 8px;
-        border-radius: 4px;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        padding: 12px;
+        border-radius: var(--event-radius);
         list-style-type: none;
-        border-left: 3px solid #3498db;
+        border-left: 5px solid var(--primary-color);
+        transition: var(--transition);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
       }
+      
+      .day-events-list li:nth-of-type(4n+1) {
+        border-left-color: var(--primary-color);
+      }
+      
+      .day-events-list li:nth-of-type(4n+2) {
+        border-left-color: var(--accent-color-1);
+      }
+      
+      .day-events-list li:nth-of-type(4n+3) {
+        border-left-color: var(--accent-color-2);
+      }
+      
+      .day-events-list li:nth-of-type(4n+4) {
+        border-left-color: var(--secondary-color);
+      }
+      
+      .day-events-list li:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      
       .day-events-list li .event-title {
         font-weight: bold;
+        color: var(--dark-color);
       }
+      
       .day-events-list li .event-description {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 3px;
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 5px;
       }
     }
   `;
@@ -296,9 +504,9 @@ document.addEventListener('DOMContentLoaded', function () {
   modal.style.left = '50%';
   modal.style.transform = 'translate(-50%, -50%)';
   modal.style.background = '#fff';
-  modal.style.padding = '1rem';
+  modal.style.padding = '1.5rem';
   modal.style.border = '1px solid #ccc';
-  modal.style.borderRadius = '8px';
+  modal.style.borderRadius = '12px';
   modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   modal.style.minWidth = '300px';
   
@@ -312,9 +520,9 @@ document.addEventListener('DOMContentLoaded', function () {
   createEventModal.style.left = '50%';
   createEventModal.style.transform = 'translate(-50%, -50%)';
   createEventModal.style.background = '#fff';
-  createEventModal.style.padding = '1rem';
+  createEventModal.style.padding = '1.5rem';
   createEventModal.style.border = '1px solid #ccc';
-  createEventModal.style.borderRadius = '8px';
+  createEventModal.style.borderRadius = '12px';
   createEventModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   createEventModal.style.minWidth = '300px';
   createEventModal.style.maxWidth = '90%';
@@ -329,9 +537,9 @@ document.addEventListener('DOMContentLoaded', function () {
   dayEventsModal.style.left = '50%';
   dayEventsModal.style.transform = 'translate(-50%, -50%)';
   dayEventsModal.style.background = '#fff';
-  dayEventsModal.style.padding = '1rem';
+  dayEventsModal.style.padding = '1.5rem';
   dayEventsModal.style.border = '1px solid #ccc';
-  dayEventsModal.style.borderRadius = '8px';
+  dayEventsModal.style.borderRadius = '12px';
   dayEventsModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
   dayEventsModal.style.width = '90%';
   dayEventsModal.style.maxWidth = '350px';
@@ -339,7 +547,7 @@ document.addEventListener('DOMContentLoaded', function () {
   dayEventsModal.style.overflow = 'auto';
   
   dayEventsModal.innerHTML = `
-    <h3 id="dayModalTitle"></h3>
+    <h3 id="dayModalTitle" style="margin-top: 0; color: #212529;"></h3>
     <ul class="day-events-list" id="dayEventsList"></ul>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
       <button id="addEventBtn">Add Event</button>
@@ -351,8 +559,8 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Regular event modal content
   modal.innerHTML = `
-    <h3 id="modalTitle"></h3>
-    <p id="modalDesc"></p>
+    <h3 id="modalTitle" style="margin-top: 0; color: #212529;"></h3>
+    <p id="modalDesc" style="color: #6c757d;"></p>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
       <button id="editBtn">Edit</button>
       <button id="deleteBtn">Delete</button>
@@ -362,18 +570,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Create event modal content
   createEventModal.innerHTML = `
-    <h3>Create New Event</h3>
+    <h3 style="margin-top: 0; color: #212529;">Create New Event</h3>
     <div style="margin: 15px 0;">
-      <label for="newEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold;">Event Title:</label>
-      <input type="text" id="newEventTitle" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
+      <label for="newEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Event Title:</label>
+      <input type="text" id="newEventTitle" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
     </div>
     <div style="margin: 15px 0;">
-      <label for="newEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
-      <textarea id="newEventDesc" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; min-height: 80px;"></textarea>
+      <label for="newEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Description:</label>
+      <textarea id="newEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;"></textarea>
     </div>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="saveNewEventBtn" style="background-color: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Save</button>
-      <button id="cancelNewEventBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+      <button id="saveNewEventBtn">Save</button>
+      <button id="cancelNewEventBtn">Cancel</button>
     </div>
   `;
 
@@ -467,6 +675,7 @@ document.addEventListener('DOMContentLoaded', function () {
     overlay.style.height = '100%';
     overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
     overlay.style.zIndex = '999';
+    overlay.style.backdropFilter = 'blur(3px)';
     document.body.appendChild(overlay);
     return overlay;
   }
@@ -690,26 +899,26 @@ document.addEventListener('DOMContentLoaded', function () {
     editModal.style.left = '50%';
     editModal.style.transform = 'translate(-50%, -50%)';
     editModal.style.background = '#fff';
-    editModal.style.padding = '1rem';
+    editModal.style.padding = '1.5rem';
     editModal.style.border = '1px solid #ccc';
-    editModal.style.borderRadius = '8px';
-    editModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    editModal.style.borderRadius = '12px';
+    editModal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
     editModal.style.minWidth = '300px';
     editModal.style.maxWidth = '90%';
     
     editModal.innerHTML = `
-      <h3>Edit Event</h3>
+      <h3 style="margin-top: 0; color: #212529;">Edit Event</h3>
       <div style="margin: 15px 0;">
-        <label for="editEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold;">Event Title:</label>
-        <input type="text" id="editEventTitle" value="${event.title}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box;">
+        <label for="editEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Event Title:</label>
+        <input type="text" id="editEventTitle" value="${event.title}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
       </div>
       <div style="margin: 15px 0;">
-        <label for="editEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold;">Description:</label>
-        <textarea id="editEventDesc" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; min-height: 80px;">${event.extendedProps.description || ''}</textarea>
+        <label for="editEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Description:</label>
+        <textarea id="editEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;">${event.extendedProps.description || ''}</textarea>
       </div>
       <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-        <button id="saveEditBtn" style="background-color: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Save</button>
-        <button id="cancelEditBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+        <button id="saveEditBtn">Save</button>
+        <button id="cancelEditBtn">Cancel</button>
       </div>
     `;
     
@@ -811,19 +1020,19 @@ document.addEventListener('DOMContentLoaded', function () {
     confirmModal.style.left = '50%';
     confirmModal.style.transform = 'translate(-50%, -50%)';
     confirmModal.style.background = '#fff';
-    confirmModal.style.padding = '1rem';
+    confirmModal.style.padding = '1.5rem';
     confirmModal.style.border = '1px solid #ccc';
-    confirmModal.style.borderRadius = '8px';
-    confirmModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    confirmModal.style.borderRadius = '12px';
+    confirmModal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
     confirmModal.style.minWidth = '300px';
     confirmModal.style.maxWidth = '90%';
     
     confirmModal.innerHTML = `
-      <h3>Confirm Delete</h3>
+      <h3 style="margin-top: 0; color: #212529;">Confirm Delete</h3>
       <p>Are you sure you want to delete this event: "${event.title}"?</p>
       <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-        <button id="confirmDeleteBtn" style="background-color: #ff4d4d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
-        <button id="cancelDeleteBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+        <button id="confirmDeleteBtn">Delete</button>
+        <button id="cancelDeleteBtn">Cancel</button>
       </div>
     `;
     
@@ -991,7 +1200,13 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.getEvents().forEach(event => {
       // Format date as YYYY-MM-DD for comparison
       const dateStr = new Date(event.start).toISOString().split('T')[0];
-      eventDates[dateStr] = true;
+      
+      // Count events per day for different colored dots
+      if (!eventDates[dateStr]) {
+        eventDates[dateStr] = 1;
+      } else {
+        eventDates[dateStr]++;
+      }
     });
     
     // Add dots to each day that has events
@@ -1003,6 +1218,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (dayCell) {
           const dot = document.createElement('div');
           dot.className = 'event-dot';
+          
+          // Add a class modifier based on the event count (for color variation)
+          const count = eventDates[dateAttr] % 4; // 0-3 range for 4 colors
+          dot.classList.add(`event-dot-${count}`);
+          
           dayCell.appendChild(dot);
         }
       }
@@ -1016,20 +1236,6 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // If mobile state changed, need to update the UI
     if (wasIsMobile !== isMobile) {
-      // Reposition logout button
-      const logoutContainer = document.getElementById('logoutContainer');
-      if (logoutContainer) {
-        if (isMobile) {
-          // Move to top of calendar
-          document.body.removeChild(logoutContainer);
-          calendarEl.parentNode.insertBefore(logoutContainer, calendarEl);
-        } else {
-          // Move to top right of page
-          calendarEl.parentNode.removeChild(logoutContainer);
-          document.body.insertBefore(logoutContainer, document.body.firstChild);
-        }
-      }
-      
       if (isMobile) {
         // Switched to mobile - add dots and adjust calendar size
         calendar.setOption('height', 'auto');
