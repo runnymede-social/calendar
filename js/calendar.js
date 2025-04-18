@@ -821,7 +821,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
   }
   
-  // Function to show day events modal
+      // Function to show day events modal
   function showDayEventsModal(date, dateStr) {
     const formattedDate = date.toLocaleDateString('en-US', { 
       weekday: 'long', 
@@ -866,15 +866,15 @@ document.addEventListener('DOMContentLoaded', function () {
       dayEventsListEl.appendChild(li);
     }
     
-    // Set up add event button
-    addEventBtn.onclick = () => {
+    // Set up add event button - using onclick instead of addEventListener to prevent multiple handlers
+    addEventBtn.onclick = function() {
       dayEventsModal.style.display = 'none';
       removeOverlay();
       createEventPrompt(dateStr);
     };
     
     // Set up close button
-    closeDayModalBtn.onclick = () => {
+    closeDayModalBtn.onclick = function() {
       dayEventsModal.style.display = 'none';
       removeOverlay();
     };
