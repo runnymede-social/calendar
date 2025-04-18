@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
       overflow: hidden !important;
       box-shadow: var(--box-shadow) !important;
       background-color: white !important;
-      border: none !important;
+      border: 1px solid #e0e0e0 !important;
     }
     
     /* Calendar header styling */
@@ -609,10 +609,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const saveNewEventBtn = document.getElementById('saveNewEventBtn');
   const cancelNewEventBtn = document.getElementById('cancelNewEventBtn');
   
+  // Get references to modal elements
   const dayModalTitleEl = document.getElementById('dayModalTitle');
   const dayEventsListEl = document.getElementById('dayEventsList');
-  const addEventBtn = document.getElementById('addEventBtn');
-  const closeDayModalBtn = document.getElementById('closeDayModalBtn');
+  let addEventBtn = document.getElementById('addEventBtn');
+  let closeDayModalBtn = document.getElementById('closeDayModalBtn');
 
   // Add click handlers for non-modal elements in the document
   document.addEventListener('click', function(event) {
