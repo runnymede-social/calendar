@@ -302,28 +302,52 @@ function hideLoading() {
   }
 }
 
-// Add visible debug indicator on the page
+// Add visible debug indicator that's more visible on mobile
 (function() {
-  const debugEl = document.createElement('div');
-  debugEl.style.position = 'fixed';
-  debugEl.style.bottom = '5px';
-  debugEl.style.left = '5px';
-  debugEl.style.backgroundColor = 'rgba(0,0,0,0.7)';
-  debugEl.style.color = 'white';
-  debugEl.style.padding = '4px 8px';
-  debugEl.style.fontSize = '10px';
-  debugEl.style.borderRadius = '4px';
-  debugEl.style.zIndex = '9999';
-  debugEl.textContent = 'DEBUG:1 - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
-  
-  // Wait for DOM to be fully loaded
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  function addDebugElement() {
+    // Remove any existing debug element first
+    const existingDebug = document.getElementById('calendar-debug-indicator');
+    if (existingDebug) {
+      existingDebug.parentNode.removeChild(existingDebug);
+    }
+    
+    // Create new debug element with more visibility
+    const debugEl = document.createElement('div');
+    debugEl.id = 'calendar-debug-indicator';
+    debugEl.style.position = 'fixed';
+    debugEl.style.bottom = '10px';
+    debugEl.style.left = '10px';
+    debugEl.style.backgroundColor = 'rgba(0,0,0,0.8)';
+    debugEl.style.color = 'white';
+    debugEl.style.padding = '8px 12px';
+    debugEl.style.fontSize = '14px';
+    debugEl.style.fontWeight = 'bold';
+    debugEl.style.borderRadius = '4px';
+    debugEl.style.zIndex = '9999';
+    debugEl.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    debugEl.textContent = 'DEBUG:1 - FIXED ADD EVENT - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
+    
     document.body.appendChild(debugEl);
-  } else {
-    window.addEventListener('DOMContentLoaded', function() {
-      document.body.appendChild(debugEl);
-    });
+    
+    // Make it flash to be noticeable
+    setTimeout(function() {
+      debugEl.style.backgroundColor = 'rgba(255,0,0,0.8)';
+      setTimeout(function() {
+        debugEl.style.backgroundColor = 'rgba(0,0,0,0.8)';
+      }, 500);
+    }, 1000);
   }
+  
+  // Try to add it immediately if document is ready
+  if (document.body) {
+    addDebugElement();
+  } else {
+    // Otherwise wait for DOMContentLoaded
+    window.addEventListener('DOMContentLoaded', addDebugElement);
+  }
+  
+  // Also add it after a longer delay as a fallback
+  setTimeout(addDebugElement, 2000);
 })();
 
   // Force FullCalendar to ignore screen size and always use full month view
