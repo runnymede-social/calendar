@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with MUCH larger desktop size - ' + new Date().toISOString());
+  console.log('Calendar with delete button fix - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -20,6 +20,20 @@ document.addEventListener('DOMContentLoaded', function () {
   // First, apply extra CSS styles specifically for desktop and loading indicators
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
+    /* Button styles */
+    #deleteBtn {
+      background-color: #ff4d4d !important; 
+      color: white !important;
+      border: none !important;
+      padding: 8px 12px !important;
+      border-radius: 4px !important;
+      cursor: pointer !important;
+    }
+    
+    #deleteBtn:hover {
+      background-color: #ff3333 !important;
+    }
+    
     /* IMPORTANT: Ensure desktop styles are applied strongly */
     @media (min-width: 769px) {
       #calendar {
@@ -231,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <p id="modalDesc"></p>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
       <button id="editBtn">Edit</button>
-      <button id="deleteBtn" style="background-color: #ff4d4d; color: white;">Delete</button>
+      <button id="deleteBtn">Delete</button>
       <button id="closeBtn">Close</button>
     </div>
   `;
