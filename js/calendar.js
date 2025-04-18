@@ -15,42 +15,93 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to prompt for new event creation
   function createEventPrompt(dateStr) {
+    console.log('createEventPrompt called with date:', dateStr);
+    
     // Use modal instead of browser prompts
     createOverlay();
     
-    // Get a fresh reference to the modal and its elements
-    const createEventModal = document.getElementById('createEventModal');
+    // Get a fresh reference to the modal elements
+    let createEventModal = document.getElementById('createEventModal');
     
-    // Clear any previous values
+    // If the modal doesn't exist, recreate all modals
+    if (!createEventModal) {
+      console.error('Create event modal not found! Recreating...');
+      createAllModals();
+      createEventModal = document.getElementById('createEventModal');
+      
+      if (!createEventModal) {
+        console.error('Still cannot find create event modal after recreation!');
+        removeOverlay();
+        showToast('Error creating event modal', 'error');
+        return;
+      }
+    }
+    
+    // Store the date in the modal's dataset
+    createEventModal.dataset.date = dateStr;
+    console.log('Date stored in dataset:', createEventModal.dataset.date);
+    
+    // Get fresh references to the form inputs
     const newEventTitleInput = document.getElementById('newEventTitle');
     const newEventDescInput = document.getElementById('newEventDesc');
     
-    if (!createEventModal || !newEventTitleInput || !newEventDescInput) {
-      console.error('Create event modal elements not found! Recreating...');
-      createAllModals();
-      return createEventPrompt(dateStr);
+    if (!newEventTitleInput || !newEventDescInput) {
+      console.error('Form inputs not found!');
+      removeOverlay();
+      showToast('Error loading form', 'error');
+      return;
     }
-    
-    // Store the date for later use
-    createEventModal.dataset.date = dateStr;
     
     // Reset inputs
     newEventTitleInput.value = '';
     newEventDescInput.value = '';
     
-    // Clear any existing event listeners to prevent duplicates
-    const oldSaveNewEventBtn = document.getElementById('saveNewEventBtn');
-    const newSaveNewEventBtn = oldSaveNewEventBtn.cloneNode(true);
-    oldSaveNewEventBtn.parentNode.replaceChild(newSaveNewEventBtn, oldSaveNewEventBtn);
+    // Remove the form's current buttons container and recreate it
+    const buttonContainer = createEventModal.querySelector('div:last-child');
+    const newButtonContainer = document.createElement('div');
+    newButtonContainer.style.display = 'flex';
+    newButtonContainer.style.justifyContent = 'space-between';
+    newButtonContainer.style.marginTop = '15px';
     
-    const oldCancelNewEventBtn = document.getElementById('cancelNewEventBtn');
-    const newCancelNewEventBtn = oldCancelNewEventBtn.cloneNode(true);
-    oldCancelNewEventBtn.parentNode.replaceChild(newCancelNewEventBtn, oldCancelNewEventBtn);
+    // Create new save button
+    const saveBtn = document.createElement('button');
+    saveBtn.id = 'saveNewEventBtn';
+    saveBtn.textContent = 'Save';
+    saveBtn.style.backgroundColor = '#4361ee';
+    saveBtn.style.color = 'white';
+    saveBtn.style.border = 'none';
+    saveBtn.style.boxShadow = '0 2px 6px rgba(67, 97, 238, 0.3)';
+    saveBtn.style.borderRadius = '6px';
+    saveBtn.style.padding = '8px 16px';
+    saveBtn.style.fontWeight = '500';
     
-    // Add fresh event listeners
-    newSaveNewEventBtn.addEventListener('click', saveNewEvent);
+    // Create new cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.id = 'cancelNewEventBtn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.backgroundColor = '#f2f2f2';
+    cancelBtn.style.color = '#212529';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.borderRadius = '6px';
+    cancelBtn.style.padding = '8px 16px';
+    cancelBtn.style.fontWeight = '500';
     
-    newCancelNewEventBtn.addEventListener('click', function() {
+    // Add buttons to the container
+    newButtonContainer.appendChild(saveBtn);
+    newButtonContainer.appendChild(cancelBtn);
+    
+    // Replace old buttons with new ones
+    buttonContainer.parentNode.replaceChild(newButtonContainer, buttonContainer);
+    
+    // Add event listeners to new buttons
+    const currentDateStr = dateStr; // Capture date in closure
+    
+    saveBtn.addEventListener('click', function() {
+      console.log('Save button clicked, date from closure:', currentDateStr);
+      saveNewEvent(currentDateStr);
+    });
+    
+    cancelBtn.addEventListener('click', function() {
       createEventModal.style.display = 'none';
       removeOverlay();
     });
@@ -60,13 +111,23 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Focus on the title input
     setTimeout(() => newEventTitleInput.focus(), 100);
+    
+    console.log('Event creation modal displayed with date:', dateStr);
   }
   
   // Function to save the new event
-  async function saveNewEvent() {
+  async function saveNewEvent(dateStrFromParam) {
+    console.log('saveNewEvent called with param date:', dateStrFromParam);
+    
     const createEventModal = document.getElementById('createEventModal');
     const newEventTitleInput = document.getElementById('newEventTitle');
     const newEventDescInput = document.getElementById('newEventDesc');
+    
+    if (!createEventModal || !newEventTitleInput || !newEventDescInput) {
+      console.error('Modal elements not found in saveNewEvent');
+      showToast('Error saving event', 'error');
+      return;
+    }
     
     const title = newEventTitleInput.value.trim();
     if (!title) {
@@ -75,10 +136,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     const description = newEventDescInput.value.trim();
-    const dateStr = createEventModal.dataset.date;
+    
+    // Use date from parameter if provided, otherwise from modal dataset
+    let dateStr = dateStrFromParam;
+    if (!dateStr) {
+      dateStr = createEventModal.dataset.date;
+      console.log('Using date from dataset:', dateStr);
+    }
     
     if (!dateStr) {
-      console.error('Date string not found!', createEventModal.dataset);
+      console.error('No date found for event!');
       showToast('Error: No date selected', 'error');
       return;
     }
@@ -87,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
     createEventModal.style.display = 'none';
     
     showLoading('Creating event...');
+    console.log('Sending request to create event for date:', dateStr);
     
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
@@ -103,8 +171,13 @@ document.addEventListener('DOMContentLoaded', function () {
       hideLoading();
       removeOverlay();
       
-      if (!res.ok || !data.id) throw new Error('Failed to create event');
+      if (!res.ok || !data.id) {
+        console.error('API response not OK:', res.status, data);
+        throw new Error('Failed to create event');
+      }
 
+      console.log('Event created successfully with ID:', data.id);
+      
       calendar.addEvent({
         id: data.id,
         title,
@@ -120,6 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
       
       showToast('Event created successfully!', 'success');
     } catch (err) {
+      console.error('Error creating event:', err);
       hideLoading();
       removeOverlay();
       showToast('Create error: ' + err.message, 'error');
@@ -1202,11 +1276,9 @@ function hideLoading() {
     // Always get fresh references to these elements
     const dayModalTitleEl = document.getElementById('dayModalTitle');
     const dayEventsListEl = document.getElementById('dayEventsList');
-    const addEventBtn = document.getElementById('addEventBtn');
-    const closeDayModalBtn = document.getElementById('closeDayModalBtn');
     const dayEventsModal = document.getElementById('dayEventsModal');
     
-    if (!dayModalTitleEl || !dayEventsListEl || !addEventBtn || !closeDayModalBtn || !dayEventsModal) {
+    if (!dayModalTitleEl || !dayEventsListEl || !dayEventsModal) {
       console.error('Required day modal elements not found! Recreating...');
       createAllModals();
       return showDayEventsModal(date, dateStr); // Try again with new elements
@@ -1249,28 +1321,55 @@ function hideLoading() {
       dayEventsListEl.appendChild(li);
     }
     
-    // Clear any existing event listeners to prevent duplicates
-    const oldAddEventBtn = document.getElementById('addEventBtn');
-    const newAddEventBtn = oldAddEventBtn.cloneNode(true);
-    oldAddEventBtn.parentNode.replaceChild(newAddEventBtn, oldAddEventBtn);
+    // Remove and recreate buttons to clean up event listeners
+    const buttonContainer = dayEventsModal.querySelector('div:last-child');
+    const buttonContainerClone = buttonContainer.cloneNode(false); // shallow clone without children
     
-    // Set up add event button with proper closure
-    const currentDateStr = dateStr; // Capture the current date in this closure
-    newAddEventBtn.addEventListener('click', function() {
-      console.log('Add event button clicked for date:', currentDateStr);
+    // Create new add event button
+    const addEventBtn = document.createElement('button');
+    addEventBtn.id = 'addEventBtn';
+    addEventBtn.textContent = 'Add Event';
+    addEventBtn.style.backgroundColor = '#4361ee';
+    addEventBtn.style.color = 'white';
+    addEventBtn.style.border = 'none';
+    addEventBtn.style.boxShadow = '0 2px 6px rgba(67, 97, 238, 0.3)';
+    addEventBtn.style.borderRadius = '6px';
+    addEventBtn.style.padding = '8px 16px';
+    addEventBtn.style.fontWeight = '500';
+    
+    // Create new close button
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'closeDayModalBtn';
+    closeBtn.textContent = 'Close';
+    closeBtn.style.backgroundColor = '#f2f2f2';
+    closeBtn.style.color = '#212529';
+    closeBtn.style.border = 'none';
+    closeBtn.style.borderRadius = '6px';
+    closeBtn.style.padding = '8px 16px';
+    closeBtn.style.fontWeight = '500';
+    
+    // Add buttons to the container
+    buttonContainerClone.appendChild(addEventBtn);
+    buttonContainerClone.appendChild(closeBtn);
+    
+    // Replace old container with new one
+    buttonContainer.parentNode.replaceChild(buttonContainerClone, buttonContainer);
+    
+    // Capture the dateStr in a local variable for the closure
+    const selectedDateStr = dateStr;
+    console.log('Setting up Add Event button for date:', selectedDateStr);
+    
+    // Add event listeners to new buttons
+    addEventBtn.addEventListener('click', function() {
       dayEventsModal.style.display = 'none';
       removeOverlay();
-      // Call createEventPrompt with the captured date
-      createEventPrompt(currentDateStr);
+      console.log('Add event button clicked for date:', selectedDateStr);
+      setTimeout(function() {
+        createEventPrompt(selectedDateStr);
+      }, 100);
     });
     
-    // Clear existing close button listener
-    const oldCloseDayModalBtn = document.getElementById('closeDayModalBtn');
-    const newCloseDayModalBtn = oldCloseDayModalBtn.cloneNode(true);
-    oldCloseDayModalBtn.parentNode.replaceChild(newCloseDayModalBtn, oldCloseDayModalBtn);
-    
-    // Set up close button
-    newCloseDayModalBtn.addEventListener('click', function() {
+    closeBtn.addEventListener('click', function() {
       dayEventsModal.style.display = 'none';
       removeOverlay();
     });
@@ -1278,6 +1377,9 @@ function hideLoading() {
     // Show modal
     createOverlay();
     dayEventsModal.style.display = 'block';
+    
+    // Debug info
+    console.log('Day events modal displayed for date:', dateStr);
   }
   
   // Function to edit an event
