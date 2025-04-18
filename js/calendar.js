@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with dots loaded - FINAL FIX VERSION - ' + new Date().toISOString());
+  console.log('Calendar with larger desktop size - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -20,8 +20,27 @@ document.addEventListener('DOMContentLoaded', function () {
   // Add style for event dots and mobile-specific styles
   const style = document.createElement('style');
   style.textContent = `
+    /* Desktop styles */
+    #calendar {
+      height: 750px !important; /* Make calendar larger on desktop */
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .fc-daygrid-day {
+      min-height: 120px; /* Taller day cells */
+    }
+    
     /* Mobile specific styles */
     @media (max-width: 768px) {
+      #calendar {
+        height: auto !important;
+      }
+      
+      .fc-daygrid-day {
+        min-height: initial;
+      }
+      
       .fc-daygrid-event {
         display: none !important;
       }
@@ -195,9 +214,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize calendar
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
-    height: 'auto',
-    contentHeight: 600,
-    aspectRatio: 1.35,
+    height: isMobile ? 'auto' : 750, // Larger height on desktop
+    contentHeight: isMobile ? 600 : 750, // Larger height on desktop
+    aspectRatio: isMobile ? 1.35 : 1.5, // Different aspect ratio for desktop
     expandRows: true,
     selectable: true,
     editable: false,
@@ -206,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     views: {
       dayGridMonth: {
         type: 'dayGridMonth',
-        dayMaxEventRows: true
+        dayMaxEventRows: isMobile ? true : 4 // Show more events on desktop
       }
     },
     titleFormat: { year: 'numeric', month: 'long' },
@@ -460,10 +479,16 @@ document.addEventListener('DOMContentLoaded', function () {
     // If mobile state changed, need to update the UI
     if (wasIsMobile !== isMobile) {
       if (isMobile) {
-        // Switched to mobile - add dots
+        // Switched to mobile - add dots and adjust calendar size
+        calendar.setOption('height', 'auto');
+        calendar.setOption('contentHeight', 600);
+        calendar.setOption('aspectRatio', 1.35);
         updateEventDots();
       } else {
-        // Switched to desktop - remove dots
+        // Switched to desktop - remove dots and increase calendar size
+        calendar.setOption('height', 750);
+        calendar.setOption('contentHeight', 750);
+        calendar.setOption('aspectRatio', 1.5);
         const existingDots = document.querySelectorAll('.event-dot');
         existingDots.forEach(dot => dot.remove());
       }
