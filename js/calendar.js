@@ -798,7 +798,48 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Function to delete an event
   async function deleteEvent(event) {
-    if (confirm('Are you sure you want to delete this event?')) {
+    modal.style.display = 'none';
+    removeOverlay();
+    
+    // Create a confirmation modal
+    const confirmModal = document.createElement('div');
+    confirmModal.id = 'confirmDeleteModal';
+    confirmModal.style.display = 'block';
+    confirmModal.style.position = 'fixed';
+    confirmModal.style.zIndex = '1000';
+    confirmModal.style.top = '50%';
+    confirmModal.style.left = '50%';
+    confirmModal.style.transform = 'translate(-50%, -50%)';
+    confirmModal.style.background = '#fff';
+    confirmModal.style.padding = '1rem';
+    confirmModal.style.border = '1px solid #ccc';
+    confirmModal.style.borderRadius = '8px';
+    confirmModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    confirmModal.style.minWidth = '300px';
+    confirmModal.style.maxWidth = '90%';
+    
+    confirmModal.innerHTML = `
+      <h3>Confirm Delete</h3>
+      <p>Are you sure you want to delete this event: "${event.title}"?</p>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="confirmDeleteBtn" style="background-color: #ff4d4d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Delete</button>
+        <button id="cancelDeleteBtn" style="background-color: #f2f2f2; color: #333; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">Cancel</button>
+      </div>
+    `;
+    
+    document.body.appendChild(confirmModal);
+    createOverlay();
+    
+    // Get references to confirmation modal elements
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    
+    // Set up button handlers
+    confirmDeleteBtn.onclick = async function() {
+      // Remove the confirmation modal
+      confirmModal.style.display = 'none';
+      document.body.removeChild(confirmModal);
+      
       showLoading('Deleting event...');
       
       try {
@@ -812,15 +853,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         hideLoading();
+        removeOverlay();
         
         if (!res.ok) throw new Error('Failed to delete event');
         
         // Remove event from calendar
         event.remove();
-        
-        // Close modal
-        modal.style.display = 'none';
-        removeOverlay();
         
         // Update the dots for mobile view
         if (isMobile) {
@@ -830,9 +868,34 @@ document.addEventListener('DOMContentLoaded', function () {
         showToast('Event deleted successfully!', 'success');
       } catch (err) {
         hideLoading();
+        removeOverlay();
         showToast('Delete error: ' + err.message, 'error');
       }
-    }
+    };
+    
+    cancelDeleteBtn.onclick = function() {
+      confirmModal.style.display = 'none';
+      document.body.removeChild(confirmModal);
+      removeOverlay();
+    };
+    
+    // Handle clicks outside the modal using a one-time event listener
+    const closeConfirmModalListener = function(e) {
+      if (confirmModal.style.display === 'block' && !confirmModal.contains(e.target)) {
+        confirmModal.style.display = 'none';
+        if (confirmModal.parentNode) {
+          document.body.removeChild(confirmModal);
+        }
+        removeOverlay();
+        // Remove this event listener once it's been triggered
+        document.removeEventListener('click', closeConfirmModalListener);
+      }
+    };
+    
+    // Add the event listener with a delay to prevent immediate triggering
+    setTimeout(() => {
+      document.addEventListener('click', closeConfirmModalListener);
+    }, 100);
   }
 
   // Function to prompt for new event creation
