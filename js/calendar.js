@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with larger desktop size - ' + new Date().toISOString());
+  console.log('Calendar with loading feedback - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   let isMobile = window.innerWidth < 768;
 
-  // Add style for event dots and mobile-specific styles
+  // Add style for event dots, loading indicators, and mobile-specific styles
   const style = document.createElement('style');
   style.textContent = `
     /* Desktop styles */
@@ -29,6 +29,69 @@ document.addEventListener('DOMContentLoaded', function () {
     
     .fc-daygrid-day {
       min-height: 120px; /* Taller day cells */
+    }
+    
+    /* Loading indicator styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255,255,255,0.7);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    
+    .loading-text {
+      font-size: 18px;
+      color: #333;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 16px;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    .toast.show {
+      opacity: 1;
+    }
+    
+    .toast.success {
+      background-color: #4CAF50;
+    }
+    
+    .toast.error {
+      background-color: #f44336;
     }
     
     /* Mobile specific styles */
@@ -210,6 +273,62 @@ document.addEventListener('DOMContentLoaded', function () {
       document.body.removeChild(overlay);
     }
   }
+  
+  // Loading indicator functions
+  function showLoading(message = 'Loading...') {
+    const existingLoader = document.getElementById('loadingOverlay');
+    if (existingLoader) {
+      document.getElementById('loadingText').textContent = message;
+      return;
+    }
+    
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'loading-overlay';
+    
+    loadingOverlay.innerHTML = `
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">${message}</div>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+  }
+  
+  function hideLoading() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      document.body.removeChild(loadingOverlay);
+    }
+  }
+  
+  // Toast notification functions
+  function showToast(message, type = '', duration = 3000) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      document.body.removeChild(existingToast);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Force reflow to enable animation
+    void toast.offsetWidth;
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, duration);
+  }
 
   // Initialize calendar
   const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -349,6 +468,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (newTitle === null) return;
     const newDesc = prompt('Edit description:', event.extendedProps.description || '');
 
+    showLoading('Updating event...');
+    
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
         method: 'PUT',
@@ -359,6 +480,8 @@ document.addEventListener('DOMContentLoaded', function () {
         body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
       });
 
+      hideLoading();
+      
       if (!res.ok) throw new Error('Failed to update');
       event.setProp('title', newTitle);
       event.setExtendedProp('description', newDesc);
@@ -367,14 +490,19 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isMobile) {
         updateEventDots();
       }
+      
+      showToast('Event updated successfully!', 'success');
     } catch (err) {
-      alert('Update error: ' + err.message);
+      hideLoading();
+      showToast('Update error: ' + err.message, 'error');
     }
   }
   
   // Function to delete an event
   async function deleteEvent(event) {
     if (confirm('Are you sure you want to delete this event?')) {
+      showLoading('Deleting event...');
+      
       try {
         const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
           method: 'DELETE',
@@ -385,6 +513,8 @@ document.addEventListener('DOMContentLoaded', function () {
           body: JSON.stringify({ id: event.id })
         });
 
+        hideLoading();
+        
         if (!res.ok) throw new Error('Failed to delete event');
         
         // Remove event from calendar
@@ -398,8 +528,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isMobile) {
           updateEventDots();
         }
+        
+        showToast('Event deleted successfully!', 'success');
       } catch (err) {
-        alert('Delete error: ' + err.message);
+        hideLoading();
+        showToast('Delete error: ' + err.message, 'error');
       }
     }
   }
@@ -410,6 +543,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!title) return;
     const description = prompt('Enter event description (optional):') || '';
 
+    showLoading('Creating event...');
+    
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
         method: 'POST',
@@ -421,6 +556,9 @@ document.addEventListener('DOMContentLoaded', function () {
       });
 
       const data = await res.json();
+      
+      hideLoading();
+      
       if (!res.ok || !data.id) throw new Error('Failed to create event');
 
       calendar.addEvent({
@@ -435,8 +573,11 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isMobile) {
         updateEventDots();
       }
+      
+      showToast('Event created successfully!', 'success');
     } catch (err) {
-      alert('Create error: ' + err.message);
+      hideLoading();
+      showToast('Create error: ' + err.message, 'error');
     }
   }
   
@@ -499,6 +640,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Load events and render calendar
   (async () => {
+    showLoading('Loading calendar events...');
+    
     try {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
         headers: { Authorization: 'Bearer ' + token }
@@ -520,6 +663,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // After the calendar is rendered, add dots to days with events
       setTimeout(() => {
         updateEventDots();
+        hideLoading();
       }, 100);
       
       // Make sure all event elements have cursor: pointer style
@@ -527,10 +671,12 @@ document.addEventListener('DOMContentLoaded', function () {
         el.style.cursor = 'pointer';
       });
     } catch (err) {
+      hideLoading();
       const errorEl = document.getElementById('error');
       if (errorEl) {
         errorEl.innerText = 'Error loading events: ' + err.message;
       } else {
+        showToast('Error loading events: ' + err.message, 'error');
         console.error('Error loading events:', err.message);
       }
     }
