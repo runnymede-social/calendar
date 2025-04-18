@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with delete button fix - ' + new Date().toISOString());
+  console.log('Calendar with logout button - ' + new Date().toISOString());
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -17,9 +17,63 @@ document.addEventListener('DOMContentLoaded', function () {
   const calendarEl = document.getElementById('calendar');
   let isMobile = window.innerWidth < 768;
 
-  // First, apply extra CSS styles specifically for desktop and loading indicators
+  // First, apply extra CSS styles including logout button styling
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
+    /* Logout button styles */
+    #logoutContainer {
+      position: absolute;
+      right: 15px;
+      z-index: 100;
+    }
+    
+    #logoutBtn {
+      background-color: #f2f2f2;
+      color: #333;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+    
+    #logoutBtn:hover {
+      background-color: #e6e6e6;
+    }
+    
+    #logoutBtn svg {
+      margin-right: 5px;
+    }
+    
+    /* Mobile specific logout button */
+    @media (max-width: 768px) {
+      #logoutContainer {
+        position: relative;
+        text-align: right;
+        margin-bottom: 10px;
+        right: 0;
+      }
+      
+      #logoutBtn {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+      
+      /* Hide text on very small screens */
+      @media (max-width: 400px) {
+        #logoutBtnText {
+          display: none;
+        }
+        
+        #logoutBtn svg {
+          margin-right: 0;
+        }
+      }
+    }
+    
     /* Button styles */
     #deleteBtn {
       background-color: #ff4d4d !important; 
@@ -192,6 +246,38 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   `;
   document.head.appendChild(forceDesktopStyles);
+
+  // Add logout button
+  const logoutContainer = document.createElement('div');
+  logoutContainer.id = 'logoutContainer';
+  
+  logoutContainer.innerHTML = `
+    <button id="logoutBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+      <span id="logoutBtnText">Logout</span>
+    </button>
+  `;
+  
+  // Insert logout button in the appropriate place depending on mobile/desktop
+  if (isMobile) {
+    // For mobile, add at the top of the calendar container
+    calendarEl.parentNode.insertBefore(logoutContainer, calendarEl);
+  } else {
+    // For desktop, add at the top right of the page
+    document.body.insertBefore(logoutContainer, document.body.firstChild);
+  }
+  
+  // Add logout functionality
+  document.getElementById('logoutBtn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to log out?')) {
+      localStorage.removeItem('calendarToken');
+      window.location.href = 'index.html';
+    }
+  });
 
   // Create modal for showing event details
   const modal = document.createElement('div');
@@ -661,6 +747,20 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // If mobile state changed, need to update the UI
     if (wasIsMobile !== isMobile) {
+      // Reposition logout button
+      const logoutContainer = document.getElementById('logoutContainer');
+      if (logoutContainer) {
+        if (isMobile) {
+          // Move to top of calendar
+          document.body.removeChild(logoutContainer);
+          calendarEl.parentNode.insertBefore(logoutContainer, calendarEl);
+        } else {
+          // Move to top right of page
+          calendarEl.parentNode.removeChild(logoutContainer);
+          document.body.insertBefore(logoutContainer, document.body.firstChild);
+        }
+      }
+      
       if (isMobile) {
         // Switched to mobile - add dots and adjust calendar size
         calendar.setOption('height', 'auto');
