@@ -1406,5 +1406,14 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('load', function() {
     setTimeout(forceCalendarSize, 200);
   });
-});
-  function
+
+}); // ← closes document.addEventListener('DOMContentLoaded', …)
+
+// If/when you implement your loading indicator, you can stub them here:
+function showLoading() {
+  // …
+}
+function hideLoading() {
+  // …
+}
+
