@@ -46,12 +46,32 @@ document.addEventListener('DOMContentLoaded', function () {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
     
+    /* Direct border fix */
+    .fc, .fc table, .fc table tr, .fc table td, .fc table th {
+      border-color: #e0e0e0 !important;
+    }
+    
     /* Calendar container styling */
     #calendar {
       border-radius: var(--border-radius) !important;
       overflow: hidden !important;
       box-shadow: var(--box-shadow) !important;
       background-color: white !important;
+      border: 1px solid #e0e0e0 !important;
+    }
+    
+    /* Force all borders to be visible */
+    .fc .fc-scrollgrid {
+      border: 1px solid #e0e0e0 !important;
+    }
+    
+    .fc .fc-scrollgrid-section-header > *, 
+    .fc .fc-scrollgrid-section-body > * {
+      border: 1px solid #e0e0e0 !important;
+    }
+    
+    .fc-theme-standard td, 
+    .fc-theme-standard th {
       border: 1px solid #e0e0e0 !important;
     }
     
@@ -81,10 +101,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     /* Calendar table styling */
-    .fc-scrollgrid {
-      border: none !important;
-    }
-    
     .fc-col-header {
       background-color: white !important;
     }
@@ -398,6 +414,12 @@ document.addEventListener('DOMContentLoaded', function () {
       /* Ensure table fills container */
       .fc-scrollgrid {
         width: 100% !important;
+        border: 1px solid #e0e0e0 !important;
+      }
+      
+      .fc-theme-standard td, 
+      .fc-theme-standard th {
+        border: 1px solid #e0e0e0 !important;
       }
       
       .fc-daygrid-day {
@@ -502,118 +524,110 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Create modal for showing event details
-  const modal = document.createElement('div');
-  modal.id = 'eventModal';
-  modal.style.display = 'none';
-  modal.style.position = 'fixed';
-  modal.style.zIndex = '1000';
-  modal.style.top = '50%';
-  modal.style.left = '50%';
-  modal.style.transform = 'translate(-50%, -50%)';
-  modal.style.background = '#fff';
-  modal.style.padding = '1.5rem';
-  modal.style.border = '1px solid #ccc';
-  modal.style.borderRadius = '12px';
-  modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-  modal.style.minWidth = '300px';
-  
-  // Create event creation modal
-  const createEventModal = document.createElement('div');
-  createEventModal.id = 'createEventModal';
-  createEventModal.style.display = 'none';
-  createEventModal.style.position = 'fixed';
-  createEventModal.style.zIndex = '1000';
-  createEventModal.style.top = '50%';
-  createEventModal.style.left = '50%';
-  createEventModal.style.transform = 'translate(-50%, -50%)';
-  createEventModal.style.background = '#fff';
-  createEventModal.style.padding = '1.5rem';
-  createEventModal.style.border = '1px solid #ccc';
-  createEventModal.style.borderRadius = '12px';
-  createEventModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-  createEventModal.style.minWidth = '300px';
-  createEventModal.style.maxWidth = '90%';
-  
-  // Create day events modal for mobile
-  const dayEventsModal = document.createElement('div');
-  dayEventsModal.id = 'dayEventsModal';
-  dayEventsModal.style.display = 'none';
-  dayEventsModal.style.position = 'fixed';
-  dayEventsModal.style.zIndex = '1000';
-  dayEventsModal.style.top = '50%';
-  dayEventsModal.style.left = '50%';
-  dayEventsModal.style.transform = 'translate(-50%, -50%)';
-  dayEventsModal.style.background = '#fff';
-  dayEventsModal.style.padding = '1.5rem';
-  dayEventsModal.style.border = '1px solid #ccc';
-  dayEventsModal.style.borderRadius = '12px';
-  dayEventsModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-  dayEventsModal.style.width = '90%';
-  dayEventsModal.style.maxWidth = '350px';
-  dayEventsModal.style.maxHeight = '80vh';
-  dayEventsModal.style.overflow = 'auto';
-  
-  dayEventsModal.innerHTML = `
-    <h3 id="dayModalTitle" style="margin-top: 0; color: #212529;"></h3>
-    <ul class="day-events-list" id="dayEventsList"></ul>
-    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="addEventBtn">Add Event</button>
-      <button id="closeDayModalBtn">Close</button>
-    </div>
-  `;
-  
-  document.body.appendChild(dayEventsModal);
-  
-  // Regular event modal content
-  modal.innerHTML = `
-    <h3 id="modalTitle" style="margin-top: 0; color: #212529;"></h3>
-    <p id="modalDesc" style="color: #6c757d;"></p>
-    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="editBtn">Edit</button>
-      <button id="deleteBtn">Delete</button>
-      <button id="closeBtn">Close</button>
-    </div>
-  `;
+  // Create all our modals
+  function createAllModals() {
+    // Create modal for showing event details
+    const modal = document.createElement('div');
+    modal.id = 'eventModal';
+    modal.style.display = 'none';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '1000';
+    modal.style.top = '50%';
+    modal.style.left = '50%';
+    modal.style.transform = 'translate(-50%, -50%)';
+    modal.style.background = '#fff';
+    modal.style.padding = '1.5rem';
+    modal.style.border = '1px solid #ccc';
+    modal.style.borderRadius = '12px';
+    modal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    modal.style.minWidth = '300px';
+    
+    // Create event creation modal
+    const createEventModal = document.createElement('div');
+    createEventModal.id = 'createEventModal';
+    createEventModal.style.display = 'none';
+    createEventModal.style.position = 'fixed';
+    createEventModal.style.zIndex = '1000';
+    createEventModal.style.top = '50%';
+    createEventModal.style.left = '50%';
+    createEventModal.style.transform = 'translate(-50%, -50%)';
+    createEventModal.style.background = '#fff';
+    createEventModal.style.padding = '1.5rem';
+    createEventModal.style.border = '1px solid #ccc';
+    createEventModal.style.borderRadius = '12px';
+    createEventModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    createEventModal.style.minWidth = '300px';
+    createEventModal.style.maxWidth = '90%';
+    
+    // Create day events modal for mobile
+    const dayEventsModal = document.createElement('div');
+    dayEventsModal.id = 'dayEventsModal';
+    dayEventsModal.style.display = 'none';
+    dayEventsModal.style.position = 'fixed';
+    dayEventsModal.style.zIndex = '1000';
+    dayEventsModal.style.top = '50%';
+    dayEventsModal.style.left = '50%';
+    dayEventsModal.style.transform = 'translate(-50%, -50%)';
+    dayEventsModal.style.background = '#fff';
+    dayEventsModal.style.padding = '1.5rem';
+    dayEventsModal.style.border = '1px solid #ccc';
+    dayEventsModal.style.borderRadius = '12px';
+    dayEventsModal.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+    dayEventsModal.style.width = '90%';
+    dayEventsModal.style.maxWidth = '350px';
+    dayEventsModal.style.maxHeight = '80vh';
+    dayEventsModal.style.overflow = 'auto';
+    
+    dayEventsModal.innerHTML = `
+      <h3 id="dayModalTitle" style="margin-top: 0; color: #212529;"></h3>
+      <ul class="day-events-list" id="dayEventsList"></ul>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="addEventBtn" style="background-color: #4361ee; color: white; border: none; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Add Event</button>
+        <button id="closeDayModalBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Close</button>
+      </div>
+    `;
+    
+    document.body.appendChild(dayEventsModal);
+    
+    // Regular event modal content
+    modal.innerHTML = `
+      <h3 id="modalTitle" style="margin-top: 0; color: #212529;"></h3>
+      <p id="modalDesc" style="color: #6c757d;"></p>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="editBtn" style="background-color: #4361ee; color: white; border: none; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Edit</button>
+        <button id="deleteBtn" style="background-color: #f72585; color: white; border: none; box-shadow: 0 2px 6px rgba(247, 37, 133, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Delete</button>
+        <button id="closeBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Close</button>
+      </div>
+    `;
 
-  // Create event modal content
-  createEventModal.innerHTML = `
-    <h3 style="margin-top: 0; color: #212529;">Create New Event</h3>
-    <div style="margin: 15px 0;">
-      <label for="newEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Event Title:</label>
-      <input type="text" id="newEventTitle" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
-    </div>
-    <div style="margin: 15px 0;">
-      <label for="newEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Description:</label>
-      <textarea id="newEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;"></textarea>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="saveNewEventBtn">Save</button>
-      <button id="cancelNewEventBtn">Cancel</button>
-    </div>
-  `;
+    // Create event modal content
+    createEventModal.innerHTML = `
+      <h3 style="margin-top: 0; color: #212529;">Create New Event</h3>
+      <div style="margin: 15px 0;">
+        <label for="newEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Event Title:</label>
+        <input type="text" id="newEventTitle" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
+      </div>
+      <div style="margin: 15px 0;">
+        <label for="newEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Description:</label>
+        <textarea id="newEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;"></textarea>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="saveNewEventBtn" style="background-color: #4361ee; color: white; border: none; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Save</button>
+        <button id="cancelNewEventBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Cancel</button>
+      </div>
+    `;
 
-  document.body.appendChild(modal);
-  document.body.appendChild(createEventModal);
-
-  // Get references to modal elements
-  const modalTitleEl = document.getElementById('modalTitle');
-  const modalDescEl = document.getElementById('modalDesc');
-  const editBtn = document.getElementById('editBtn');
-  const deleteBtn = document.getElementById('deleteBtn');
-  const closeBtn = document.getElementById('closeBtn');
+    document.body.appendChild(modal);
+    document.body.appendChild(createEventModal);
+    
+    return {
+      eventModal: modal,
+      createEventModal: createEventModal,
+      dayEventsModal: dayEventsModal
+    };
+  }
   
-  // Get references to create event modal elements
-  const newEventTitleInput = document.getElementById('newEventTitle');
-  const newEventDescInput = document.getElementById('newEventDesc');
-  const saveNewEventBtn = document.getElementById('saveNewEventBtn');
-  const cancelNewEventBtn = document.getElementById('cancelNewEventBtn');
-  
-  // Get references to modal elements
-  const dayModalTitleEl = document.getElementById('dayModalTitle');
-  const dayEventsListEl = document.getElementById('dayEventsList');
-  let addEventBtn = document.getElementById('addEventBtn');
-  let closeDayModalBtn = document.getElementById('closeDayModalBtn');
+  const modals = createAllModals();
 
   // Add click handlers for non-modal elements in the document
   document.addEventListener('click', function(event) {
@@ -625,22 +639,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     // Close event modal when clicking outside
-    if (modal.style.display === 'block' && !modal.contains(event.target) &&
+    if (modals.eventModal.style.display === 'block' && !modals.eventModal.contains(event.target) &&
         !event.target.closest('.day-events-list li')) {
-      modal.style.display = 'none';
+      modals.eventModal.style.display = 'none';
       removeOverlay();
     }
     
     // Close create event modal when clicking outside
-    if (createEventModal.style.display === 'block' && !createEventModal.contains(event.target)) {
-      createEventModal.style.display = 'none';
+    if (modals.createEventModal.style.display === 'block' && !modals.createEventModal.contains(event.target)) {
+      modals.createEventModal.style.display = 'none';
       removeOverlay();
     }
     
     // Close day events modal when clicking outside
-    if (dayEventsModal.style.display === 'block' && !dayEventsModal.contains(event.target) &&
+    if (modals.dayEventsModal.style.display === 'block' && !modals.dayEventsModal.contains(event.target) &&
         !event.target.closest('.fc-daygrid-day')) {
-      dayEventsModal.style.display = 'none';
+      modals.dayEventsModal.style.display = 'none';
       removeOverlay();
     }
   });
@@ -784,7 +798,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update the event dots when month changes
         setTimeout(() => {
           updateEventDots();
-        }, 100); // Small delay to ensure DOM is updated
+        }, 200); // Increased delay to ensure DOM is updated
       }
     },
     
@@ -811,32 +825,55 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Function to show event modal
   function showEventModal(event) {
-    if (!modalTitleEl || !modalDescEl) {
-      console.error('❌ Modal elements not found!');
-      return;
+    // Get the latest references
+    const modalTitleEl = document.getElementById('modalTitle');
+    const modalDescEl = document.getElementById('modalDesc');
+    const editBtn = document.getElementById('editBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    
+    if (!modalTitleEl || !modalDescEl || !editBtn || !deleteBtn || !closeBtn) {
+      console.error('❌ Modal elements not found! Recreating...');
+      createAllModals();
+      return showEventModal(event); // Try again with new elements
     }
 
     createOverlay();
     modalTitleEl.textContent = event.title;
     modalDescEl.textContent = event.extendedProps.description || '(No description)';
-    modal.style.display = 'block';
+    
+    const eventModal = document.getElementById('eventModal');
+    eventModal.style.display = 'block';
     
     // Set up event handlers
     editBtn.onclick = () => editEvent(event);
     deleteBtn.onclick = () => deleteEvent(event);
     closeBtn.onclick = () => {
-      modal.style.display = 'none';
+      eventModal.style.display = 'none';
       removeOverlay();
     };
   }
   
-      // Function to show day events modal
+  // Function to show day events modal
   function showDayEventsModal(date, dateStr) {
     const formattedDate = date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       month: 'long', 
       day: 'numeric' 
     });
+    
+    // Always get fresh references to these elements
+    const dayModalTitleEl = document.getElementById('dayModalTitle');
+    const dayEventsListEl = document.getElementById('dayEventsList');
+    const addEventBtn = document.getElementById('addEventBtn');
+    const closeDayModalBtn = document.getElementById('closeDayModalBtn');
+    const dayEventsModal = document.getElementById('dayEventsModal');
+    
+    if (!dayModalTitleEl || !dayEventsListEl || !addEventBtn || !closeDayModalBtn || !dayEventsModal) {
+      console.error('Required day modal elements not found! Recreating...');
+      createAllModals();
+      return showDayEventsModal(date, dateStr); // Try again with new elements
+    }
     
     dayModalTitleEl.textContent = formattedDate;
     
@@ -875,18 +912,23 @@ document.addEventListener('DOMContentLoaded', function () {
       dayEventsListEl.appendChild(li);
     }
     
-    // Set up add event button - using onclick instead of addEventListener to prevent multiple handlers
-    addEventBtn.onclick = function() {
+    // DIRECT FUNCTION BINDING - a completely different approach
+    // Set up add event button with direct binding
+    addEventBtn.addEventListener('click', function addEventHandler() {
+      console.log('Add event button clicked for date:', dateStr);
       dayEventsModal.style.display = 'none';
       removeOverlay();
+      // Remove this handler to prevent duplicates
+      addEventBtn.removeEventListener('click', addEventHandler);
+      // Call createEventPrompt with this date
       createEventPrompt(dateStr);
-    };
+    });
     
     // Set up close button
-    closeDayModalBtn.onclick = function() {
+    closeDayModalBtn.addEventListener('click', function() {
       dayEventsModal.style.display = 'none';
       removeOverlay();
-    };
+    });
     
     // Show modal
     createOverlay();
@@ -895,7 +937,10 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Function to edit an event
   async function editEvent(event) {
-    modal.style.display = 'none';
+    const eventModal = document.getElementById('eventModal');
+    if (eventModal) {
+      eventModal.style.display = 'none';
+    }
     removeOverlay();
     
     // Create a temporary modal for editing
@@ -926,8 +971,8 @@ document.addEventListener('DOMContentLoaded', function () {
         <textarea id="editEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;">${event.extendedProps.description || ''}</textarea>
       </div>
       <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-        <button id="saveEditBtn">Save</button>
-        <button id="cancelEditBtn">Cancel</button>
+        <button id="saveEditBtn" style="background-color: #4361ee; color: white; border: none; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Save</button>
+        <button id="cancelEditBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Cancel</button>
       </div>
     `;
     
@@ -944,7 +989,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => editTitleInput.focus(), 100);
     
     // Set up button handlers
-    saveEditBtn.onclick = async function() {
+    saveEditBtn.addEventListener('click', async function saveHandler() {
       const newTitle = editTitleInput.value.trim();
       if (!newTitle) {
         showToast('Please enter an event title', 'error');
@@ -987,15 +1032,15 @@ document.addEventListener('DOMContentLoaded', function () {
         removeOverlay();
         showToast('Update error: ' + err.message, 'error');
       }
-    };
+    });
     
-    cancelEditBtn.onclick = function() {
+    cancelEditBtn.addEventListener('click', function() {
       editModal.style.display = 'none';
       document.body.removeChild(editModal);
       removeOverlay();
-    };
+    });
     
-    // Handle clicks outside the modal using a one-time event listener
+    // Handle clicks outside the modal
     const closeEditModalListener = function(e) {
       if (editModal.style.display === 'block' && !editModal.contains(e.target)) {
         editModal.style.display = 'none';
@@ -1016,7 +1061,10 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Function to delete an event
   async function deleteEvent(event) {
-    modal.style.display = 'none';
+    const eventModal = document.getElementById('eventModal');
+    if (eventModal) {
+      eventModal.style.display = 'none';
+    }
     removeOverlay();
     
     // Create a confirmation modal
@@ -1040,8 +1088,8 @@ document.addEventListener('DOMContentLoaded', function () {
       <h3 style="margin-top: 0; color: #212529;">Confirm Delete</h3>
       <p>Are you sure you want to delete this event: "${event.title}"?</p>
       <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-        <button id="confirmDeleteBtn">Delete</button>
-        <button id="cancelDeleteBtn">Cancel</button>
+        <button id="confirmDeleteBtn" style="background-color: #f72585; color: white; border: none; box-shadow: 0 2px 6px rgba(247, 37, 133, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Delete</button>
+        <button id="cancelDeleteBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Cancel</button>
       </div>
     `;
     
@@ -1053,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
     
     // Set up button handlers
-    confirmDeleteBtn.onclick = async function() {
+    confirmDeleteBtn.addEventListener('click', async function() {
       // Remove the confirmation modal
       confirmModal.style.display = 'none';
       document.body.removeChild(confirmModal);
@@ -1089,15 +1137,15 @@ document.addEventListener('DOMContentLoaded', function () {
         removeOverlay();
         showToast('Delete error: ' + err.message, 'error');
       }
-    };
+    });
     
-    cancelDeleteBtn.onclick = function() {
+    cancelDeleteBtn.addEventListener('click', function() {
       confirmModal.style.display = 'none';
       document.body.removeChild(confirmModal);
       removeOverlay();
-    };
+    });
     
-    // Handle clicks outside the modal using a one-time event listener
+    // Handle clicks outside the modal
     const closeConfirmModalListener = function(e) {
       if (confirmModal.style.display === 'block' && !confirmModal.contains(e.target)) {
         confirmModal.style.display = 'none';
@@ -1121,6 +1169,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // Use modal instead of browser prompts
     createOverlay();
     
+    const createEventModal = document.getElementById('createEventModal');
+    const newEventTitleInput = document.getElementById('newEventTitle');
+    const newEventDescInput = document.getElementById('newEventDesc');
+    const saveNewEventBtn = document.getElementById('saveNewEventBtn');
+    const cancelNewEventBtn = document.getElementById('cancelNewEventBtn');
+    
+    if (!createEventModal || !newEventTitleInput || !newEventDescInput || !saveNewEventBtn || !cancelNewEventBtn) {
+      console.error('Create event modal elements not found! Recreating...');
+      createAllModals();
+      return createEventPrompt(dateStr);
+    }
+    
     // Store the date for later use
     createEventModal.dataset.date = dateStr;
     
@@ -1134,16 +1194,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // Focus on the title input
     setTimeout(() => newEventTitleInput.focus(), 100);
     
-    // Set up button handlers
-    saveNewEventBtn.onclick = saveNewEvent;
-    cancelNewEventBtn.onclick = () => {
+    // Set up button handlers with direct event listeners
+    saveNewEventBtn.addEventListener('click', saveNewEvent);
+    cancelNewEventBtn.addEventListener('click', function() {
       createEventModal.style.display = 'none';
       removeOverlay();
-    };
+    });
   }
   
   // Function to save the new event
   async function saveNewEvent() {
+    const createEventModal = document.getElementById('createEventModal');
+    const newEventTitleInput = document.getElementById('newEventTitle');
+    const newEventDescInput = document.getElementById('newEventDesc');
+    
     const title = newEventTitleInput.value.trim();
     if (!title) {
       showToast('Please enter an event title', 'error');
@@ -1199,6 +1263,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Function to add dots to days with events
   function updateEventDots() {
     if (!isMobile) return;
+    
+    console.log('Updating event dots...');
     
     // First, remove any existing dots
     const existingDots = document.querySelectorAll('.event-dot');
@@ -1318,7 +1384,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Force resize one more time after a delay
         forceCalendarSize();
-      }, 100);
+      }, 200);
       
       // Make sure all event elements have cursor: pointer style
       document.querySelectorAll('.fc-event').forEach(el => {
@@ -1341,3 +1407,4 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(forceCalendarSize, 200);
   });
 });
+  function
