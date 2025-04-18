@@ -1,4 +1,341 @@
-document.addEventListener('DOMContentLoaded', function () {
+// Function to prompt for new event creation
+  function createEventPrompt(dateStr) {
+    console.log('createEventPrompt called with date:', dateStr);
+    
+    // Use modal instead of browser prompts
+    createOverlay();
+    
+    // Store the date in a hidden field
+    const eventDateInput = document.getElementById('eventDate');
+    if (eventDateInput) {
+      eventDateInput.value = dateStr;
+    }
+    
+    // Reset other form fields
+    const newEventTitleInput = document.getElementById('newEventTitle');
+    const newEventDescInput = document.getElementById('newEventDesc');
+    
+    if (newEventTitleInput) newEventTitleInput.value = '';
+    if (newEventDescInput) newEventDescInput.value = '';
+    
+    // Get button elements
+    const saveNewEventBtn = document.getElementById('saveNewEventBtn');
+    const cancelNewEventBtn = document.getElementById('cancelNewEventBtn');
+    
+    // Setup button event handlers - remove existing listeners by cloning
+    if (saveNewEventBtn) {
+      const newSaveBtn = saveNewEventBtn.cloneNode(true);
+      saveNewEventBtn.parentNode.replaceChild(newSaveBtn, saveNewEventBtn);
+      
+      // Add a new listener with the date from closure
+      const currentDateStr = dateStr; // Capture date string in closure
+      newSaveBtn.addEventListener('click', function() {
+        saveNewEvent(currentDateStr); // Pass date directly to avoid relying on hidden field
+      });
+    }
+    
+    if (cancelNewEventBtn) {
+      const newCancelBtn = cancelNewEventBtn.cloneNode(true);
+      cancelNewEventBtn.parentNode.replaceChild(newCancelBtn, cancelNewEventBtn);
+      
+      newCancelBtn.addEventListener('click', function() {
+        modals.createEventModal.style.display = 'none';
+        removeOverlay();
+      });
+    }
+    
+    // Show the modal
+    modals.createEventModal.style.display = 'block';
+    
+    // Focus on the title input
+    if (newEventTitleInput) {
+      setTimeout(() => newEventTitleInput.focus(), 100);
+    }
+    
+    console.log('Event creation modal displayed with date:', dateStr);
+  }
+  
+  // Function to save the new event
+  async function saveNewEvent(dateStrParam) {
+    console.log('saveNewEvent called with param:', dateStrParam);
+    
+    // Get form elements
+    const newEventTitleInput = document.getElementById('newEventTitle');
+    const newEventDescInput = document.getElementById('newEventDesc');
+    const eventDateInput = document.getElementById('eventDate');
+    
+    if (!newEventTitleInput) {
+      console.error('Title input not found');
+      showToast('Error finding form elements', 'error');
+      return;
+    }
+    
+    // Get the title and validate
+    const title = newEventTitleInput.value.trim();
+    if (!title) {
+      showToast('Please enter an event title', 'error');
+      return;
+    }
+    
+    // Get the description
+    const description = newEventDescInput ? newEventDescInput.value.trim() : '';
+    
+    // Get the date - try multiple sources
+    let dateStr = dateStrParam;
+    if (!dateStr && eventDateInput) {
+      dateStr = eventDateInput.value;
+    }
+    
+    if (!dateStr) {
+      console.error('No date found for event!');
+      showToast('Error: No date selected', 'error');
+      return;
+    }
+    
+    // Hide the modal
+    modals.createEventModal.style.display = 'none';
+    
+    // Show loading indicator
+    showLoading('Creating event...');
+    
+    console.log('Creating event with:', { title, description, dateStr });
+    
+    try {
+      const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ title, description, time: dateStr })
+      });
+
+      const data = await res.json();
+      
+      hideLoading();
+      removeOverlay();
+      
+      if (!res.ok || !data.id) {
+        console.error('API response not OK:', res.status, data);
+        throw new Error('Failed to create event');
+      }
+
+      console.log('Event created successfully with ID:', data.id);
+      
+      // Add the event to the calendar
+      calendar.addEvent({
+        id: data.id,
+        title,
+        start: dateStr,
+        allDay: true,
+        extendedProps: { description }
+      });
+      
+      // Update the dots for mobile view
+      if (isMobile) {
+        updateEventDots();
+      }
+      
+      showToast('Event created successfully!', 'success');
+    } catch (err) {
+      console.error('Error creating event:', err);
+      hideLoading();
+      removeOverlay();
+      showToast('Create error: ' + err.message, 'error');
+    }
+  }
+  
+  // Function to add dots to days with events
+  function updateEventDots() {
+    if (!isMobile) return;
+    
+    console.log('Updating event dots...');
+    
+    // First, remove any existing dots
+    const existingDots = document.querySelectorAll('.event-dot');
+    existingDots.forEach(dot => dot.remove());
+    
+    // Create a map of dates that have events
+    const eventDates = {};
+    calendar.getEvents().forEach(event => {
+      // Format date as YYYY-MM-DD for comparison
+      const dateStr = new Date(event.start).toISOString().split('T')[0];
+      
+      // Count events per day for different colored dots
+      if (!eventDates[dateStr]) {
+        eventDates[dateStr] = 1;
+      } else {
+        eventDates[dateStr]++;
+      }
+    });
+    
+    // Add dots to each day that has events
+    document.querySelectorAll('.fc-daygrid-day').forEach(dayEl => {
+      const dateAttr = dayEl.getAttribute('data-date');
+      if (eventDates[dateAttr]) {
+        // Add a dot to this day cell
+        const dayCell = dayEl.querySelector('.fc-daygrid-day-bottom');
+        if (dayCell) {
+          const dot = document.createElement('div');
+          dot.className = 'event-dot';
+          
+          // Add a class modifier based on the event count (for color variation)
+          const count = eventDates[dateAttr] % 4; // 0-3 range for 4 colors
+          dot.classList.add(`event-dot-${count}`);
+          
+          dayCell.appendChild(dot);
+        }
+      }
+    });
+  }
+
+  // Handle window resize to update mobile state
+  window.addEventListener('resize', function() {
+    const wasIsMobile = isMobile;
+    isMobile = window.innerWidth < 768;
+    
+    // If mobile state changed, need to update the UI
+    if (wasIsMobile !== isMobile) {
+      if (isMobile) {
+        // Switched to mobile - add dots and adjust calendar size
+        calendar.setOption('height', 'auto');
+        calendar.setOption('contentHeight', 600);
+        calendar.setOption('aspectRatio', 1.35);
+        updateEventDots();
+      } else {
+        // Switched to desktop - remove dots and increase calendar size
+        calendar.setOption('height', 800);
+        calendar.setOption('contentHeight', 800);
+        calendar.setOption('aspectRatio', 1.5);
+        const existingDots = document.querySelectorAll('.event-dot');
+        existingDots.forEach(dot => dot.remove());
+      }
+      
+      // Force redraw
+      setTimeout(() => {
+        calendar.updateSize();
+      }, 10);
+    }
+    
+    calendar.updateSize();
+  });
+
+  // Apply function to force calendar size after render
+  function forceCalendarSize() {
+    if (!isMobile) {
+      // Force calendar to be large on desktop
+      calendarEl.style.height = '800px';
+      
+      // Select all relevant container elements and force them to be large
+      const viewHarness = document.querySelector('.fc-view-harness');
+      if (viewHarness) viewHarness.style.height = '750px';
+      
+      const dayCells = document.querySelectorAll('.fc-daygrid-day');
+      dayCells.forEach(cell => {
+        cell.style.minHeight = '120px';
+      });
+    }
+  }
+
+  // Load events and render calendar
+  (async () => {
+    showLoading('Loading calendar events...');
+    
+    try {
+      const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+
+      const events = await res.json();
+      events.forEach(ev => {
+        calendar.addEvent({
+          id: ev.id,
+          title: ev.title,
+          start: ev.time,
+          allDay: true,
+          extendedProps: { description: ev.description || '' }
+        });
+      });
+
+      calendar.render();
+      
+      // Apply force sizing after render
+      forceCalendarSize();
+      
+      // After the calendar is rendered, add dots to days with events
+      setTimeout(() => {
+        updateEventDots();
+        hideLoading();
+        
+        // Force resize one more time after a delay
+        forceCalendarSize();
+      }, 200);
+      
+      // Make sure all event elements have cursor: pointer style
+      document.querySelectorAll('.fc-event').forEach(el => {
+        el.style.cursor = 'pointer';
+      });
+    } catch (err) {
+      hideLoading();
+      showToast('Error loading events: ' + err.message, 'error');
+      console.error('Error loading events:', err.message);
+    }
+  })();
+  
+  // Apply one final resize after everything else has loaded
+  window.addEventListener('load', function() {
+    setTimeout(forceCalendarSize, 200);
+  });
+
+}); // ← closes document.addEventListener('DOMContentLoaded', …)
+
+// Add visible debug indicator that's more visible on mobile
+(function() {
+  function addDebugElement() {
+    // Remove any existing debug element first
+    const existingDebug = document.getElementById('calendar-debug-indicator');
+    if (existingDebug) {
+      existingDebug.parentNode.removeChild(existingDebug);
+    }
+    
+    // Create new debug element with more visibility
+    const debugEl = document.createElement('div');
+    debugEl.id = 'calendar-debug-indicator';
+    debugEl.style.position = 'fixed';
+    debugEl.style.bottom = '10px';
+    debugEl.style.left = '10px';
+    debugEl.style.backgroundColor = 'rgba(0,0,0,0.8)';
+    debugEl.style.color = 'white';
+    debugEl.style.padding = '8px 12px';
+    debugEl.style.fontSize = '14px';
+    debugEl.style.fontWeight = 'bold';
+    debugEl.style.borderRadius = '4px';
+    debugEl.style.zIndex = '9999';
+    debugEl.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    debugEl.textContent = 'DEBUG:4 - FIXED ADD EVENT - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
+    
+    document.body.appendChild(debugEl);
+    
+    // Make it flash to be noticeable
+    setTimeout(function() {
+      debugEl.style.backgroundColor = 'rgba(255,0,0,0.8)';
+      setTimeout(function() {
+        debugEl.style.backgroundColor = 'rgba(0,0,0,0.8)';
+      }, 500);
+    }, 1000);
+  }
+  
+  // Try to add it immediately if document is ready
+  if (document.body) {
+    addDebugElement();
+  } else {
+    // Otherwise wait for DOMContentLoaded
+    window.addEventListener('DOMContentLoaded', addDebugElement);
+  }
+  
+  // Also add it after a longer delay as a fallback
+  setTimeout(addDebugElement, 2000);
+})();document.addEventListener('DOMContentLoaded', function () {
   console.log('Calendar with no zoom on input - ' + new Date().toISOString());
   
   // Add meta tag to prevent zooming on inputs
@@ -712,4 +1049,469 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   
   // Loading indicator functions
-  function showLoading(message = 'Loading...
+  function showLoading(message = 'Loading...') {
+    const existingLoader = document.getElementById('loadingOverlay');
+    if (existingLoader) {
+      document.getElementById('loadingText').textContent = message;
+      return;
+    }
+    
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loadingOverlay';
+    loadingOverlay.className = 'loading-overlay';
+    
+    loadingOverlay.innerHTML = `
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">${message}</div>
+    `;
+    
+    document.body.appendChild(loadingOverlay);
+  }
+  
+  function hideLoading() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      document.body.removeChild(loadingOverlay);
+    }
+  }
+  
+  // Toast notification functions
+  function showToast(message, type = '', duration = 3000) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      document.body.removeChild(existingToast);
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    // Force reflow to enable animation
+    void toast.offsetWidth;
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        if (toast.parentNode) {
+          document.body.removeChild(toast);
+        }
+      }, 300);
+    }, duration);
+  }
+
+  // Initialize calendar
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    height: isMobile ? 'auto' : 800, // MUCH Larger height on desktop
+    contentHeight: isMobile ? 600 : 800, // MUCH Larger height on desktop
+    aspectRatio: isMobile ? 1.35 : 1.5, // Different aspect ratio for desktop
+    expandRows: true,
+    stickyHeaderDates: false, // Disable sticky headers for better sizing
+    selectable: true,
+    editable: false,
+    eventDisplay: 'block',
+    dayMaxEventRows: true,
+    views: {
+      dayGridMonth: {
+        type: 'dayGridMonth',
+        dayMaxEventRows: isMobile ? true : 5 // Show more events on desktop
+      }
+    },
+    titleFormat: { year: 'numeric', month: 'long' },
+    headerToolbar: {
+      left: 'title',
+      center: '',
+      right: 'prev,next'
+    },
+    
+    // Added callback for when dates change (like changing months)
+    datesSet: function() {
+      // This gets called whenever the calendar changes date/view
+      if (isMobile) {
+        // Update the event dots when month changes
+        setTimeout(() => {
+          updateEventDots();
+        }, 200); // Increased delay to ensure DOM is updated
+      }
+    },
+    
+    // Make sure event elements have appropriate cursor
+    eventDidMount: function(info) {
+      info.el.style.cursor = 'pointer';
+    },
+    
+    dateClick: function(info) {
+      if (isMobile) {
+        showDayEventsModal(info.date, info.dateStr);
+      } else {
+        createEventPrompt(info.dateStr);
+      }
+    },
+
+    eventClick: function(info) {
+      console.log('Event clicked:', info.event.title);
+      showEventModal(info.event);
+      // Prevent the default action
+      info.jsEvent.preventDefault();
+    }
+  });
+
+  // Function to show event modal
+  function showEventModal(event) {
+    // Get the latest references
+    const modalTitleEl = document.getElementById('modalTitle');
+    const modalDescEl = document.getElementById('modalDesc');
+    const editBtn = document.getElementById('editBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    
+    if (!modalTitleEl || !modalDescEl || !editBtn || !deleteBtn || !closeBtn) {
+      console.error('❌ Modal elements not found! Recreating...');
+      createAllModals();
+      return showEventModal(event); // Try again with new elements
+    }
+
+    createOverlay();
+    modalTitleEl.textContent = event.title;
+    modalDescEl.textContent = event.extendedProps.description || '(No description)';
+    
+    modals.eventModal.style.display = 'block';
+    
+    // Set up event handlers
+    editBtn.onclick = () => editEvent(event);
+    deleteBtn.onclick = () => deleteEvent(event);
+    closeBtn.onclick = () => {
+      modals.eventModal.style.display = 'none';
+      removeOverlay();
+    };
+  }
+  
+  // Function to show day events modal
+  function showDayEventsModal(date, dateStr) {
+    const formattedDate = date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Store the date in the modal's dataset for later use
+    modals.dayEventsModal.setAttribute('data-date', dateStr);
+    console.log('Setting data-date attribute on dayEventsModal:', dateStr);
+    
+    // Get references to elements
+    const dayModalTitleEl = document.getElementById('dayModalTitle');
+    const dayEventsListEl = document.getElementById('dayEventsList');
+    const addEventBtn = document.getElementById('addEventBtn');
+    const closeDayModalBtn = document.getElementById('closeDayModalBtn');
+    
+    if (!dayModalTitleEl || !dayEventsListEl || !addEventBtn || !closeDayModalBtn) {
+      console.error('Required day modal elements not found! Recreating...');
+      createAllModals();
+      return showDayEventsModal(date, dateStr); // Try again with new elements
+    }
+    
+    dayModalTitleEl.textContent = formattedDate;
+    
+    // Get events for this day
+    const dayEvents = calendar.getEvents().filter(event => {
+      const eventStart = new Date(event.start);
+      return eventStart.toDateString() === date.toDateString();
+    });
+    
+    // Clear existing list
+    dayEventsListEl.innerHTML = '';
+    
+    // Add events to list
+    if (dayEvents.length > 0) {
+      dayEvents.forEach(event => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="event-title">${event.title}</div>
+          <div class="event-description">${event.extendedProps.description || '(No description)'}</div>
+        `;
+        
+        // Add click handler to open event details
+        li.addEventListener('click', function() {
+          // Hide day events modal
+          modals.dayEventsModal.style.display = 'none';
+          
+          // Show event modal
+          showEventModal(event);
+        });
+        
+        dayEventsListEl.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'No events for this day';
+      dayEventsListEl.appendChild(li);
+    }
+    
+    // Remove existing event listeners by cloning the buttons
+    const oldAddEventBtn = document.getElementById('addEventBtn');
+    const newAddEventBtn = oldAddEventBtn.cloneNode(true);
+    oldAddEventBtn.parentNode.replaceChild(newAddEventBtn, oldAddEventBtn);
+    
+    const oldCloseDayModalBtn = document.getElementById('closeDayModalBtn');
+    const newCloseDayModalBtn = oldCloseDayModalBtn.cloneNode(true);
+    oldCloseDayModalBtn.parentNode.replaceChild(newCloseDayModalBtn, oldCloseDayModalBtn);
+    
+    // Setup Add Event button - store the dateStr in a closure
+    const currentDateStr = dateStr;
+    newAddEventBtn.addEventListener('click', function() {
+      console.log('Add Event button clicked, date from closure:', currentDateStr);
+      
+      // Hide day events modal
+      modals.dayEventsModal.style.display = 'none';
+      removeOverlay();
+      
+      // Show create event modal with this date
+      setTimeout(function() {
+        createEventPrompt(currentDateStr);
+      }, 100);
+    });
+    
+    // Setup Close button
+    newCloseDayModalBtn.addEventListener('click', function() {
+      modals.dayEventsModal.style.display = 'none';
+      removeOverlay();
+    });
+    
+    // Show modal
+    createOverlay();
+    modals.dayEventsModal.style.display = 'block';
+    
+    console.log('Day events modal displayed for date:', dateStr);
+  }
+  
+  // Function to edit an event
+  async function editEvent(event) {
+    if (modals.eventModal) {
+      modals.eventModal.style.display = 'none';
+    }
+    removeOverlay();
+    
+    // Create a temporary modal for editing
+    const editModal = document.createElement('div');
+    editModal.id = 'editEventModal';
+    editModal.style.display = 'block';
+    editModal.style.position = 'fixed';
+    editModal.style.zIndex = '1000';
+    editModal.style.top = '50%';
+    editModal.style.left = '50%';
+    editModal.style.transform = 'translate(-50%, -50%)';
+    editModal.style.background = '#fff';
+    editModal.style.padding = '1.5rem';
+    editModal.style.border = '1px solid #ccc';
+    editModal.style.borderRadius = '12px';
+    editModal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+    editModal.style.minWidth = '300px';
+    editModal.style.maxWidth = '90%';
+    
+    editModal.innerHTML = `
+      <h3 style="margin-top: 0; color: #212529;">Edit Event</h3>
+      <div style="margin: 15px 0;">
+        <label for="editEventTitle" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Event Title:</label>
+        <input type="text" id="editEventTitle" value="${event.title}" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
+      </div>
+      <div style="margin: 15px 0;">
+        <label for="editEventDesc" style="display: block; margin-bottom: 5px; font-weight: bold; color: #212529;">Description:</label>
+        <textarea id="editEventDesc" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; min-height: 80px;">${event.extendedProps.description || ''}</textarea>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="saveEditBtn" style="background-color: #4361ee; color: white; border: none; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Save</button>
+        <button id="cancelEditBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Cancel</button>
+      </div>
+    `;
+    
+    document.body.appendChild(editModal);
+    createOverlay();
+    
+    // Get references to edit modal elements
+    const editTitleInput = document.getElementById('editEventTitle');
+    const editDescInput = document.getElementById('editEventDesc');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    
+    // Focus on title
+    setTimeout(() => editTitleInput.focus(), 100);
+    
+    // Set up button handlers
+    saveEditBtn.addEventListener('click', async function saveHandler() {
+      const newTitle = editTitleInput.value.trim();
+      if (!newTitle) {
+        showToast('Please enter an event title', 'error');
+        return;
+      }
+      
+      const newDesc = editDescInput.value.trim();
+      
+      // Remove the temporary modal
+      editModal.style.display = 'none';
+      document.body.removeChild(editModal);
+      
+      showLoading('Updating event...');
+      
+      try {
+        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: event.id, title: newTitle, description: newDesc })
+        });
+
+        hideLoading();
+        removeOverlay();
+        
+        if (!res.ok) throw new Error('Failed to update');
+        event.setProp('title', newTitle);
+        event.setExtendedProp('description', newDesc);
+        
+        // Update the dots for mobile view
+        if (isMobile) {
+          updateEventDots();
+        }
+        
+        showToast('Event updated successfully!', 'success');
+      } catch (err) {
+        hideLoading();
+        removeOverlay();
+        showToast('Update error: ' + err.message, 'error');
+      }
+    });
+    
+    cancelEditBtn.addEventListener('click', function() {
+      editModal.style.display = 'none';
+      document.body.removeChild(editModal);
+      removeOverlay();
+    });
+    
+    // Handle clicks outside the modal
+    const closeEditModalListener = function(e) {
+      if (editModal.style.display === 'block' && !editModal.contains(e.target)) {
+        editModal.style.display = 'none';
+        if (editModal.parentNode) {
+          document.body.removeChild(editModal);
+        }
+        removeOverlay();
+        // Remove this event listener once it's been triggered
+        document.removeEventListener('click', closeEditModalListener);
+      }
+    };
+    
+    // Add the event listener with a delay to prevent immediate triggering
+    setTimeout(() => {
+      document.addEventListener('click', closeEditModalListener);
+    }, 100);
+  }
+  
+  // Function to delete an event
+  async function deleteEvent(event) {
+    if (modals.eventModal) {
+      modals.eventModal.style.display = 'none';
+    }
+    removeOverlay();
+    
+    // Create a confirmation modal
+    const confirmModal = document.createElement('div');
+    confirmModal.id = 'confirmDeleteModal';
+    confirmModal.style.display = 'block';
+    confirmModal.style.position = 'fixed';
+    confirmModal.style.zIndex = '1000';
+    confirmModal.style.top = '50%';
+    confirmModal.style.left = '50%';
+    confirmModal.style.transform = 'translate(-50%, -50%)';
+    confirmModal.style.background = '#fff';
+    confirmModal.style.padding = '1.5rem';
+    confirmModal.style.border = '1px solid #ccc';
+    confirmModal.style.borderRadius = '12px';
+    confirmModal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+    confirmModal.style.minWidth = '300px';
+    confirmModal.style.maxWidth = '90%';
+    
+    confirmModal.innerHTML = `
+      <h3 style="margin-top: 0; color: #212529;">Confirm Delete</h3>
+      <p>Are you sure you want to delete this event: "${event.title}"?</p>
+      <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <button id="confirmDeleteBtn" style="background-color: #f72585; color: white; border: none; box-shadow: 0 2px 6px rgba(247, 37, 133, 0.3); border-radius: 6px; padding: 8px 16px; font-weight: 500;">Delete</button>
+        <button id="cancelDeleteBtn" style="background-color: #f2f2f2; color: #212529; border: none; border-radius: 6px; padding: 8px 16px; font-weight: 500;">Cancel</button>
+      </div>
+    `;
+    
+    document.body.appendChild(confirmModal);
+    createOverlay();
+    
+    // Get references to confirmation modal elements
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    
+    // Set up button handlers
+    confirmDeleteBtn.addEventListener('click', async function() {
+      // Remove the confirmation modal
+      confirmModal.style.display = 'none';
+      document.body.removeChild(confirmModal);
+      
+      showLoading('Deleting event...');
+      
+      try {
+        const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ id: event.id })
+        });
+
+        hideLoading();
+        removeOverlay();
+        
+        if (!res.ok) throw new Error('Failed to delete event');
+        
+        // Remove event from calendar
+        event.remove();
+        
+        // Update the dots for mobile view
+        if (isMobile) {
+          updateEventDots();
+        }
+        
+        showToast('Event deleted successfully!', 'success');
+      } catch (err) {
+        hideLoading();
+        removeOverlay();
+        showToast('Delete error: ' + err.message, 'error');
+      }
+    });
+    
+    cancelDeleteBtn.addEventListener('click', function() {
+      confirmModal.style.display = 'none';
+      document.body.removeChild(confirmModal);
+      removeOverlay();
+    });
+    
+    // Handle clicks outside the modal
+    const closeConfirmModalListener = function(e) {
+      if (confirmModal.style.display === 'block' && !confirmModal.contains(e.target)) {
+        confirmModal.style.display = 'none';
+        if (confirmModal.parentNode) {
+          document.body.removeChild(confirmModal);
+        }
+        removeOverlay();
+        // Remove this event listener once it's been triggered
+        document.removeEventListener('click', closeConfirmModalListener);
+      }
+    };
+    
+    // Add the event listener with a delay to prevent immediate triggering
+    setTimeout(() => {
+      document.addEventListener('click', closeConfirmModalListener);
+    }, 100);
+  }
