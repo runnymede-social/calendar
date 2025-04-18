@@ -1,5 +1,11 @@
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with logout button - ' + new Date().toISOString());
+  console.log('Calendar with no zoom on input - ' + new Date().toISOString());
+  
+  // Add meta tag to prevent zooming on inputs
+  const metaTag = document.createElement('meta');
+  metaTag.name = 'viewport';
+  metaTag.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+  document.head.appendChild(metaTag);
   
   const token = localStorage.getItem('calendarToken');
   if (!token) {
@@ -20,6 +26,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // First, apply extra CSS styles including logout button styling
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
+    /* Prevent zooming and text size adjustment */
+    input, textarea, select, button {
+      font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+    
     /* Logout button styles */
     #logoutContainer {
       position: absolute;
@@ -371,6 +382,29 @@ document.addEventListener('DOMContentLoaded', function () {
         !event.target.closest('.fc-daygrid-day')) {
       dayEventsModal.style.display = 'none';
       removeOverlay();
+    }
+  });
+
+  // Prevent zoom on inputs
+  function preventZoom(e) {
+    const t2 = e.timeStamp;
+    const t1 = e.currentTarget.dataset.lastTouch || t2;
+    const dt = t2 - t1;
+    const fingers = e.touches.length;
+    
+    e.currentTarget.dataset.lastTouch = t2;
+    
+    if (!dt || dt > 500 || fingers > 1) return; // Not double-tap
+    
+    e.preventDefault();
+    e.target.click();
+  }
+  
+  // Apply the zoom prevention to all inputs and textareas
+  document.addEventListener('DOMContentLoaded', function() {
+    const fields = document.querySelectorAll('input, textarea');
+    for (let i = 0; i < fields.length; i++) {
+      fields[i].addEventListener('touchend', preventZoom, false);
     }
   });
 
