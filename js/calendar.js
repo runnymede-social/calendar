@@ -399,7 +399,7 @@ function hideLoading() {
     debugEl.style.borderRadius = '4px';
     debugEl.style.zIndex = '9999';
     debugEl.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
-    debugEl.textContent = 'DEBUG:1 - FIXED ADD EVENT - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
+    debugEl.textContent = 'DEBUG:2 - FIXED ADD EVENT - ' + new Date().toISOString().substring(0, 19).replace('T', ' ');
     
     document.body.appendChild(debugEl);
     
