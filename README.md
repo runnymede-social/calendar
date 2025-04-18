@@ -1,4 +1,4 @@
-                             Frontend
+                         Frontend
                ┌──────────────────────────────┐
                │      User Web Browser        │
                │(Mobile/Desktop FullCalendar) │
