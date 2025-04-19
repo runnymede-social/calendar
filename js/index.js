@@ -1,14 +1,16 @@
 // Main entry point for Calendar Application
 // Loads modules and initializes the application
 
-// Import all the modules to ensure they're loaded
+// Import our modules
 import './styles.js';
 import './ui-components.js';
 import './event-handlers.js';
 import './utils.js';
 
-// Import calendar.js last as it depends on the other modules
+// This script simply imports the main calendar file
 import './calendar.js';
 
-// Log initialization to console
-console.log('Calendar application initialized - ' + new Date().toISOString());
+// This index.js file serves as the entry point 
+// for webpack or other bundlers if you decide to use them in the future
+
+console.log('Calendar application initialized');
