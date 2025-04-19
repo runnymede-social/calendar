@@ -293,7 +293,7 @@ export function setupStyles() {
       #calendar {
         min-height: 800px !important;
         height: 800px !important;
-        max-width: 1200px !important;
+        max-width: 1400px !important; /* Increased from 1200px to 1400px */
         margin: 20px auto !important;
       }
       
@@ -327,7 +327,7 @@ export function setupStyles() {
       
       /* Make calendar-messages match calendar width on desktop */
       #calendar-messages {
-        max-width: 1200px !important;
+        max-width: 1400px !important; /* Increased from 1200px to 1400px */
         margin-left: auto !important;
         margin-right: auto !important;
       }
