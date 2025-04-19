@@ -1,8 +1,8 @@
-// CSS styling for the calendar application
+// CSS styling for the calendar application - Full Screen Layout
 export function setupStyles() {
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
-    /* Modern Calendar Theme - Updated Styles */
+    /* Modern Calendar Theme - Updated Styles for Full Screen */
     :root {
       --primary-color: #4361ee;
       --secondary-color: #3a0ca3;
@@ -20,6 +20,18 @@ export function setupStyles() {
     body {
       background-color: var(--light-color);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* Full-screen container setup */
+    .container {
+      width: 100%;
+      height: 100vh;
+      padding: 0;
+      max-width: 100% !important;
     }
     
     /* Prevent zooming and text size adjustment */
@@ -32,13 +44,15 @@ export function setupStyles() {
       border-color: #e0e0e0 !important;
     }
     
-    /* Calendar container styling */
+    /* Calendar container styling for full-screen */
     #calendar {
       border-radius: var(--border-radius) !important;
       overflow: hidden !important;
       box-shadow: var(--box-shadow) !important;
       background-color: white !important;
       border: 1px solid #e0e0e0 !important;
+      height: calc(100vh - 40px) !important; /* Take full viewport height minus margins */
+      margin: 20px !important;
     }
     
     /* Force all borders to be visible */
@@ -227,8 +241,8 @@ export function setupStyles() {
     /* Logout button styles */
     #logoutContainer {
       position: absolute;
-      right: 15px;
-      top: 15px;
+      right: 30px;
+      top: 30px;
       z-index: 100;
     }
     
@@ -288,32 +302,31 @@ export function setupStyles() {
       background-color: #e6e6e6 !important;
     }
     
-    /* IMPORTANT: Ensure desktop styles are applied strongly */
+    /* IMPORTANT: Full-screen calendar for desktop */
     @media (min-width: 769px) {
       #calendar {
-        min-height: 800px !important;
-        height: 800px !important;
-        max-width: 1400px !important; /* Increased from 1200px to 1400px */
-        margin: 20px auto !important;
+        /* Take up almost the entire viewport */
+        height: calc(100vh - 60px) !important;
+        margin: 30px !important;
+        max-width: none !important; /* Remove max-width constraint */
       }
       
+      /* For full-height calendar cells */
       .fc-view-harness {
-        min-height: 700px !important;
+        min-height: calc(100vh - 180px) !important;
       }
       
       .fc .fc-daygrid-day {
-        min-height: 120px !important;
-        height: 120px !important;
+        min-height: calc((100vh - 180px) / 6) !important; /* Dividing by approx number of rows */
       }
       
       .fc-daygrid-day-frame {
-        min-height: 120px !important;
+        min-height: calc((100vh - 180px) / 6) !important;
       }
       
       /* Force larger calendar on desktop */
       .fc-view-harness, .fc-view-harness-active, .fc-daygrid {
         height: auto !important;
-        min-height: 700px !important;
       }
       
       .fc-scrollgrid, .fc-scrollgrid-liquid {
@@ -325,11 +338,10 @@ export function setupStyles() {
         height: auto !important;
       }
       
-      /* Make calendar-messages match calendar width on desktop */
+      /* Full-width calendar-messages to match calendar */
       #calendar-messages {
-        max-width: 1400px !important; /* Increased from 1200px to 1400px */
-        margin-left: auto !important;
-        margin-right: auto !important;
+        margin: 20px 30px !important;
+        max-width: none !important;
       }
     }
     
@@ -531,7 +543,7 @@ export function setupStyles() {
     
     /* Calendar Messages Section */
     #calendar-messages {
-      margin-top: 20px;
+      margin: 20px !important;
       padding: 15px;
       border-radius: var(--border-radius);
       background-color: white;
