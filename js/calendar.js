@@ -260,4 +260,6 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Apply one final resize after everything else has loaded
   window.addEventListener('load', function() {
-    setTimeout(() => forceCalendarSize(
+    setTimeout(() => forceCalendarSize(calendarEl, isMobile), 200);
+  });
+});
