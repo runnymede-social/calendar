@@ -134,9 +134,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     dateClick: function(info) {
       console.log('Date clicked:', info.dateStr, 'isMobile:', isMobile);
+      
       if (isMobile) {
+        console.log('MOBILE VIEW: Opening day events modal');
         showDayEventsModal(info.date, info.dateStr, calendar, isMobile, token);
       } else {
+        console.log('DESKTOP VIEW: Opening create event modal directly');
         createEventPrompt(info.dateStr, calendar, token);
       }
     },
@@ -156,6 +159,8 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('resize', function() {
     const wasIsMobile = isMobile;
     isMobile = window.innerWidth < 768;
+    
+    console.log('Window resized, isMobile changed from', wasIsMobile, 'to', isMobile);
     
     // If mobile state changed, need to update the UI
     if (wasIsMobile !== isMobile) {
@@ -243,6 +248,27 @@ document.addEventListener('DOMContentLoaded', function () {
       document.querySelectorAll('.fc-event').forEach(el => {
         el.style.cursor = 'pointer';
       });
+      
+      // Add important messages section
+      const messagesContainer = document.createElement('div');
+      messagesContainer.id = 'calendar-messages';
+      messagesContainer.innerHTML = `
+        <h3>Important Messages</h3>
+        <div id="messages-list">
+          <div class="message-item message-priority-high">
+            <span class="message-date">Apr 22</span>
+            <span class="message-text">Choir practice will be held at the Community Center today instead of the usual location.</span>
+          </div>
+          <div class="message-item message-priority-medium">
+            <span class="message-date">Apr 25</span>
+            <span class="message-text">Remember to bring your music sheets for the weekend rehearsal.</span>
+          </div>
+        </div>
+      `;
+      
+      // Add it after the calendar
+      calendarEl.parentNode.insertBefore(messagesContainer, calendarEl.nextSibling);
+      
     } catch (err) {
       hideLoading();
       const errorEl = document.getElementById('error');
