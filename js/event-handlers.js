@@ -4,7 +4,7 @@
 import { createOverlay, removeOverlay, showToast, showLoading, hideLoading, createEditModal, createDeleteModal } from './ui-components.js';
 
 // Function to show event modal
-export function showEventModal(event, token, calendar, isMobile) {
+export function showEventModal(event, calendar, isMobile, token) {
   const eventModal = document.getElementById('eventModal');
   const modalTitleEl = document.getElementById('modalTitle');
   const modalDescEl = document.getElementById('modalDesc');
@@ -39,8 +39,8 @@ export function showEventModal(event, token, calendar, isMobile) {
   eventModal.style.display = 'block';
   
   // Set up event handlers
-  editBtn.onclick = () => editEvent(event, token, calendar, isMobile);
-  deleteBtn.onclick = () => deleteEvent(event, token, calendar, isMobile);
+  editBtn.onclick = () => editEvent(event, calendar, isMobile, token);
+  deleteBtn.onclick = () => deleteEvent(event, calendar, isMobile, token);
   closeBtn.onclick = () => {
     eventModal.style.display = 'none';
     removeOverlay();
@@ -48,7 +48,7 @@ export function showEventModal(event, token, calendar, isMobile) {
 }
 
 // Function to show day events modal on mobile
-export function showDayEventsModal(date, dateStr, calendar, isMobile) {
+export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   const formattedDate = date.toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
@@ -106,7 +106,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile) {
         dayEventsModal.style.display = 'none';
         
         // Show event modal
-        showEventModal(event);
+        showEventModal(event, calendar, isMobile, token);
       });
       
       dayEventsListEl.appendChild(li);
@@ -125,7 +125,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile) {
     // Remove this handler to prevent duplicates
     addEventBtn.removeEventListener('click', addEventHandler);
     // Call createEventPrompt with this date
-    createEventPrompt(dateStr);
+    createEventPrompt(dateStr, calendar, token);
   });
   
   // Set up close button
@@ -140,7 +140,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile) {
 }
 
 // Function to edit an event
-export async function editEvent(event, token, calendar, isMobile) {
+export async function editEvent(event, calendar, isMobile, token) {
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
@@ -246,7 +246,7 @@ export async function editEvent(event, token, calendar, isMobile) {
 }
 
 // Function to delete an event
-export async function deleteEvent(event, token, calendar, isMobile) {
+export async function deleteEvent(event, calendar, isMobile, token) {
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
@@ -326,7 +326,7 @@ export async function deleteEvent(event, token, calendar, isMobile) {
 }
 
 // Function to prompt for new event creation
-export function createEventPrompt(dateStr, token) {
+export function createEventPrompt(dateStr, calendar, token) {
   // Use modal instead of browser prompts
   createOverlay();
   
@@ -360,8 +360,9 @@ export function createEventPrompt(dateStr, token) {
   setTimeout(() => newEventTitleInput.focus(), 100);
   
   // Set up button handlers with direct event listeners
+  // Pass calendar instance directly to saveNewEvent
   saveNewEventBtn.onclick = function() {
-    saveNewEvent(token);
+    saveNewEvent(calendar, token);
   };
   
   cancelNewEventBtn.onclick = function() {
@@ -371,7 +372,7 @@ export function createEventPrompt(dateStr, token) {
 }
 
 // Function to save the new event
-export async function saveNewEvent(token) {
+export async function saveNewEvent(calendar, token) {
   const createEventModal = document.getElementById('createEventModal');
   const newEventTitleInput = document.getElementById('newEventTitle');
   const newEventDescInput = document.getElementById('newEventDesc');
@@ -417,10 +418,7 @@ export async function saveNewEvent(token) {
     
     if (!res.ok || !data.id) throw new Error('Failed to create event');
 
-    // Get the calendar reference from the global window object
-    const calendar = window.calendarInstance;
-    
-    // Add the event to the calendar
+    // Use the calendar instance directly passed as parameter
     calendar.addEvent({
       id: data.id,
       title,
