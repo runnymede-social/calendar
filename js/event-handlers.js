@@ -41,16 +41,38 @@ export function showEventModal(event, calendar, isMobile, token) {
   
   eventModal.style.display = 'block';
   
-  // Set up event handlers
-  editBtn.onclick = () => editEvent(event, token, calendar, isMobile);
-  deleteBtn.onclick = () => deleteEvent(event, token, calendar, isMobile);
-  closeBtn.onclick = () => {
-    eventModal.style.display = 'none';
-    removeOverlay();
+  // Remove any existing click handlers to prevent duplicates
+  const oldEditBtn = editBtn.cloneNode(true);
+  editBtn.parentNode.replaceChild(oldEditBtn, editBtn);
+  
+  const oldDeleteBtn = deleteBtn.cloneNode(true);
+  deleteBtn.parentNode.replaceChild(oldDeleteBtn, deleteBtn);
+  
+  const oldCloseBtn = closeBtn.cloneNode(true);
+  closeBtn.parentNode.replaceChild(oldCloseBtn, closeBtn);
+  
+  // Get fresh references after replacing
+  const newEditBtn = document.getElementById('editBtn');
+  const newDeleteBtn = document.getElementById('deleteBtn');
+  const newCloseBtn = document.getElementById('closeBtn');
+  
+  // Set up event handlers on the new button elements
+  newEditBtn.onclick = function() {
+    editEvent(event, token, calendar, isMobile);
   };
   
-  // Add ability to close VIEW modal by clicking outside
-  // (but not for edit modals which will be handled differently)
+  newDeleteBtn.onclick = function() {
+    deleteEvent(event, token, calendar, isMobile);
+  };
+  
+  newCloseBtn.onclick = function() {
+    eventModal.style.display = 'none';
+    removeOverlay();
+    // Make sure to remove any outside click listeners when closing manually
+    document.removeEventListener('click', closeViewModalListener);
+  };
+  
+  // Define the closeViewModalListener function
   const closeViewModalListener = function(e) {
     if (eventModal.style.display === 'block' && 
         !eventModal.contains(e.target) && 
@@ -61,6 +83,9 @@ export function showEventModal(event, calendar, isMobile, token) {
       document.removeEventListener('click', closeViewModalListener);
     }
   };
+  
+  // First remove any existing listeners
+  document.removeEventListener('click', closeViewModalListener);
   
   // Add the event listener with a slight delay to prevent immediate triggering
   setTimeout(() => {
@@ -140,16 +165,29 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
     dayEventsListEl.appendChild(li);
   }
   
+  // Clone and replace buttons to remove any existing event handlers
+  const oldAddEventBtn = addEventBtn.cloneNode(true);
+  addEventBtn.parentNode.replaceChild(oldAddEventBtn, addEventBtn);
+  
+  const oldCloseDayModalBtn = closeDayModalBtn.cloneNode(true);
+  closeDayModalBtn.parentNode.replaceChild(oldCloseDayModalBtn, closeDayModalBtn);
+  
+  // Get fresh references after replacing
+  const newAddEventBtn = document.getElementById('addEventBtn');
+  const newCloseDayModalBtn = document.getElementById('closeDayModalBtn');
+  
   // Show modal
   createOverlay();
   dayEventsModal.style.display = 'block';
   
-  // Set up buttons
-  addEventBtn.onclick = null;
-  addEventBtn.onclick = function() {
+  // Set up buttons with new references
+  newAddEventBtn.onclick = function() {
     console.log('Add event button clicked for date:', dateStr);
     dayEventsModal.style.display = 'none';
     removeOverlay();
+    
+    // Remove outside click listener when closing with button
+    document.removeEventListener('click', closeDayModalListener);
     
     // Call the create event prompt function after a short delay
     setTimeout(function() {
@@ -157,13 +195,15 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
     }, 50);
   };
   
-  closeDayModalBtn.onclick = null;
-  closeDayModalBtn.onclick = function() {
+  newCloseDayModalBtn.onclick = function() {
     dayEventsModal.style.display = 'none';
     removeOverlay();
+    
+    // Remove outside click listener when closing with button
+    document.removeEventListener('click', closeDayModalListener);
   };
   
-  // Add ability to close VIEW modal by clicking outside
+  // Define the closeDayModalListener function
   const closeDayModalListener = function(e) {
     if (dayEventsModal.style.display === 'block' && 
         !dayEventsModal.contains(e.target) && 
@@ -174,6 +214,9 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
       document.removeEventListener('click', closeDayModalListener);
     }
   };
+  
+  // First remove any existing listeners
+  document.removeEventListener('click', closeDayModalListener);
   
   // Add with a delay to prevent immediate triggering
   setTimeout(() => {
@@ -374,22 +417,29 @@ export function createEventPrompt(dateStr, calendar, token) {
   // Make sure textarea preserves line breaks
   newEventDescInput.style.whiteSpace = 'pre-wrap';
   
+  // Clone and replace buttons to remove any existing event handlers
+  const oldSaveNewEventBtn = saveNewEventBtn.cloneNode(true);
+  saveNewEventBtn.parentNode.replaceChild(oldSaveNewEventBtn, saveNewEventBtn);
+  
+  const oldCancelNewEventBtn = cancelNewEventBtn.cloneNode(true);
+  cancelNewEventBtn.parentNode.replaceChild(oldCancelNewEventBtn, cancelNewEventBtn);
+  
+  // Get fresh references after replacing
+  const newSaveBtn = document.getElementById('saveNewEventBtn');
+  const newCancelBtn = document.getElementById('cancelNewEventBtn');
+  
   // Show modal
   createEventModal.style.display = 'block';
   
   // Focus on the title input
   setTimeout(() => newEventTitleInput.focus(), 100);
   
-  // Reset any previous onclick handlers
-  saveNewEventBtn.onclick = null;
-  cancelNewEventBtn.onclick = null;
-  
   // Set up button handlers with direct event listeners
-  saveNewEventBtn.onclick = function() {
+  newSaveBtn.onclick = function() {
     saveNewEvent(calendar);
   };
   
-  cancelNewEventBtn.onclick = function() {
+  newCancelBtn.onclick = function() {
     createEventModal.style.display = 'none';
     removeOverlay();
   };
