@@ -249,15 +249,15 @@ document.addEventListener('DOMContentLoaded', function () {
         el.style.cursor = 'pointer';
       });
       
-      // Add important messages section
+      // Add reminders section
       const messagesContainer = document.createElement('div');
       messagesContainer.id = 'calendar-messages';
       messagesContainer.innerHTML = `
-        <h3>Important Messages</h3>
+        <h3>Reminders</h3>
         <div id="messages-list">
           <div class="message-item message-priority-high">
-            <span class="message-date"></span>
-            <span class="message-text">Tuesday April 22, choir practice change - church closed monday </span>
+            <span class="message-date">April 22</span>
+            <span class="message-text">Choir practice on Tuesday instead of the usual Monday </span>
           </div>
           <div class="message-item message-priority-medium">
             <span class="message-date">May 10</span>
