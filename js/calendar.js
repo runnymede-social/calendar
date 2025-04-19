@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
           <div class="message-item message-priority-medium">
             <span class="message-date">May 10</span>
-            <span class="message-text">Friend and Family concert.</span>
+            <span class="message-text">Friends and Family concert.</span>
           </div>
         </div>
       `;
