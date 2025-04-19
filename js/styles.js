@@ -1,8 +1,8 @@
-// CSS styling for the calendar application - Full Screen Layout
+// CSS styling for the calendar application - Compact Full Screen Layout
 export function setupStyles() {
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
-    /* Modern Calendar Theme - Updated Styles for Full Screen */
+    /* Modern Calendar Theme - Updated Styles for Full Screen with Visible Reminders */
     :root {
       --primary-color: #4361ee;
       --secondary-color: #3a0ca3;
@@ -23,7 +23,7 @@ export function setupStyles() {
       margin: 0;
       padding: 0;
       height: 100vh;
-      overflow-x: hidden;
+      overflow: hidden; /* Prevent scrolling on body */
     }
     
     /* Full-screen container setup */
@@ -32,6 +32,8 @@ export function setupStyles() {
       height: 100vh;
       padding: 0;
       max-width: 100% !important;
+      display: flex;
+      flex-direction: column;
     }
     
     /* Prevent zooming and text size adjustment */
@@ -51,8 +53,9 @@ export function setupStyles() {
       box-shadow: var(--box-shadow) !important;
       background-color: white !important;
       border: 1px solid #e0e0e0 !important;
-      height: calc(100vh - 40px) !important; /* Take full viewport height minus margins */
-      margin: 20px !important;
+      /* Take up most of the viewport but leave space for reminders */
+      height: calc(88vh - 30px) !important;
+      margin: 15px 20px 5px 20px !important;
     }
     
     /* Force all borders to be visible */
@@ -70,15 +73,17 @@ export function setupStyles() {
       border: 1px solid #e0e0e0 !important;
     }
     
-    /* Calendar header styling */
+    /* Calendar header styling - compact */
     .fc-header-toolbar {
-      padding: 16px !important;
+      padding: 8px 16px !important;
       background: white !important;
+      margin-bottom: 0.5em !important; /* Reduce margin */
     }
     
     .fc-toolbar-title {
       font-weight: 700 !important;
       color: var(--dark-color) !important;
+      font-size: 1.5em !important; /* Slightly smaller title */
     }
     
     /* Navigation buttons */
@@ -88,6 +93,7 @@ export function setupStyles() {
       border-radius: var(--event-radius) !important;
       transition: var(--transition) !important;
       box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3) !important;
+      padding: 0.25em 0.65em !important; /* Smaller padding */
     }
     
     .fc-button-primary:hover {
@@ -101,7 +107,7 @@ export function setupStyles() {
     }
     
     .fc-col-header-cell {
-      padding: 10px 0 !important;
+      padding: 8px 0 !important; /* Reduced padding */
       font-weight: 600 !important;
       color: var(--dark-color) !important;
     }
@@ -117,7 +123,7 @@ export function setupStyles() {
     .fc-daygrid-day-number {
       font-weight: 500 !important;
       color: var(--dark-color) !important;
-      padding: 8px !important;
+      padding: 4px 8px !important; /* Reduced padding */
     }
     
     /* Today highlighting */
@@ -129,12 +135,12 @@ export function setupStyles() {
       background-color: var(--accent-color-3) !important;
       color: white !important;
       border-radius: 50% !important;
-      width: 30px !important;
-      height: 30px !important;
+      width: 25px !important; /* Slightly smaller */
+      height: 25px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      margin: 5px !important;
+      margin: 4px !important;
     }
     
     /* Event styling */
@@ -143,6 +149,7 @@ export function setupStyles() {
       border: none !important;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
       transition: var(--transition) !important;
+      padding: 2px 4px !important; /* Compact padding */
     }
     
     .fc-event:hover {
@@ -169,10 +176,10 @@ export function setupStyles() {
     
     /* Event dots for mobile */
     .event-dot {
-      width: 10px !important;
-      height: 10px !important;
+      width: 8px !important; /* Smaller dot */
+      height: 8px !important;
       border-radius: 50% !important;
-      margin: 4px auto !important;
+      margin: 3px auto !important;
       display: block !important;
       background-color: var(--primary-color) !important;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
@@ -241,8 +248,8 @@ export function setupStyles() {
     /* Logout button styles */
     #logoutContainer {
       position: absolute;
-      right: 30px;
-      top: 30px;
+      right: 20px;
+      top: 20px;
       z-index: 100;
     }
     
@@ -250,10 +257,10 @@ export function setupStyles() {
       background-color: white !important;
       color: var(--dark-color) !important;
       border: none !important;
-      padding: 8px 15px !important;
+      padding: 6px 12px !important; /* Smaller padding */
       border-radius: var(--event-radius) !important;
       cursor: pointer !important;
-      font-size: 14px !important;
+      font-size: 13px !important; /* Slightly smaller font */
       display: flex !important;
       align-items: center !important;
       transition: var(--transition) !important;
@@ -267,6 +274,8 @@ export function setupStyles() {
     
     #logoutBtn svg {
       margin-right: 5px;
+      width: 14px !important; /* Smaller icon */
+      height: 14px !important;
     }
     
     /* Button styles */
@@ -305,23 +314,23 @@ export function setupStyles() {
     /* IMPORTANT: Full-screen calendar for desktop */
     @media (min-width: 769px) {
       #calendar {
-        /* Take up almost the entire viewport */
-        height: calc(100vh - 60px) !important;
-        margin: 30px !important;
+        /* Take up 88% of the viewport height to leave room for reminders */
+        height: calc(88vh - 30px) !important;
+        margin: 15px 20px 5px 20px !important;
         max-width: none !important; /* Remove max-width constraint */
       }
       
-      /* For full-height calendar cells */
+      /* For shorter calendar cells to fit everything */
       .fc-view-harness {
-        min-height: calc(100vh - 180px) !important;
+        min-height: calc(88vh - 150px) !important;
       }
       
       .fc .fc-daygrid-day {
-        min-height: calc((100vh - 180px) / 6) !important; /* Dividing by approx number of rows */
+        min-height: calc((88vh - 150px) / 6) !important; /* Dividing by approx number of rows */
       }
       
       .fc-daygrid-day-frame {
-        min-height: calc((100vh - 180px) / 6) !important;
+        min-height: calc((88vh - 150px) / 6) !important;
       }
       
       /* Force larger calendar on desktop */
@@ -336,12 +345,6 @@ export function setupStyles() {
       .fc-scroller {
         overflow: visible !important;
         height: auto !important;
-      }
-      
-      /* Full-width calendar-messages to match calendar */
-      #calendar-messages {
-        margin: 20px 30px !important;
-        max-width: none !important;
       }
     }
     
@@ -414,6 +417,10 @@ export function setupStyles() {
     
     /* Mobile specific styles */
     @media (max-width: 768px) {
+      body {
+        overflow-y: auto; /* Allow scrolling on mobile */
+      }
+      
       #calendar {
         height: auto !important;
         margin: 10px !important;
@@ -541,30 +548,34 @@ export function setupStyles() {
       }
     }
     
-    /* Calendar Messages Section */
+    /* Calendar Messages Section - COMPACT VERSION */
     #calendar-messages {
-      margin: 20px !important;
-      padding: 15px;
+      margin: 5px 20px 15px 20px !important;
+      padding: 10px 15px !important;
       border-radius: var(--border-radius);
       background-color: white;
       box-shadow: var(--box-shadow);
+      /* Fixed height to ensure it's always visible */
+      height: calc(12vh - 25px) !important;
+      overflow-y: auto; /* Add scrollbar if content exceeds height */
     }
     
     #calendar-messages h3 {
       margin-top: 0;
+      margin-bottom: 8px !important;
       color: var(--dark-color);
-      font-size: 1.2rem;
+      font-size: 1rem !important; /* Smaller heading */
       border-bottom: 1px solid #ddd;
-      padding-bottom: 8px;
-      margin-bottom: 10px;
+      padding-bottom: 5px !important;
     }
     
     .message-item {
-      padding: 10px;
-      margin-bottom: 8px;
+      padding: 8px !important;
+      margin-bottom: 6px !important;
       border-left: 4px solid var(--primary-color);
       background-color: var(--light-color);
       border-radius: var(--event-radius);
+      font-size: 0.9rem !important; /* Slightly smaller font */
     }
     
     .message-date {
