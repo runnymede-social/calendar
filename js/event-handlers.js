@@ -49,6 +49,8 @@ export function showEventModal(event, calendar, isMobile, token) {
 
 // Function to show day events modal on mobile
 export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
+  console.log('Showing day events modal for', dateStr, 'isMobile:', isMobile, 'with token?', !!token);
+
   const formattedDate = date.toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
@@ -117,13 +119,15 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
     dayEventsListEl.appendChild(li);
   }
   
+  // Clear any existing event listeners to prevent duplicates
+  const newAddEventBtn = addEventBtn.cloneNode(true);
+  addEventBtn.parentNode.replaceChild(newAddEventBtn, addEventBtn);
+  
   // Set up add event button with direct binding
-  addEventBtn.addEventListener('click', function addEventHandler() {
+  newAddEventBtn.addEventListener('click', function() {
     console.log('Add event button clicked for date:', dateStr);
     dayEventsModal.style.display = 'none';
     removeOverlay();
-    // Remove this handler to prevent duplicates
-    addEventBtn.removeEventListener('click', addEventHandler);
     // Call createEventPrompt with this date
     createEventPrompt(dateStr, calendar, token);
   });
@@ -330,6 +334,8 @@ export function createEventPrompt(dateStr, calendar, token) {
   // Use modal instead of browser prompts
   createOverlay();
   
+  console.log('Creating event prompt for date:', dateStr, 'with token?', !!token);
+  
   const createEventModal = document.getElementById('createEventModal');
   const newEventTitleInput = document.getElementById('newEventTitle');
   const newEventDescInput = document.getElementById('newEventDesc');
@@ -347,7 +353,7 @@ export function createEventPrompt(dateStr, calendar, token) {
   // Store the date for later use
   createEventModal.dataset.date = dateStr;
   
-  // Also store the token in a data attribute (this is secure in this context)
+  // Also store the token in a data attribute
   createEventModal.dataset.token = token;
   
   // Clear any previous values
@@ -362,15 +368,22 @@ export function createEventPrompt(dateStr, calendar, token) {
   // Focus on the title input
   setTimeout(() => newEventTitleInput.focus(), 100);
   
-  // Set up button handlers with direct event listeners
-  saveNewEventBtn.onclick = function() {
-    saveNewEvent(calendar);
-  };
+  // Clear any existing event listeners to prevent duplicates
+  const newSaveBtn = saveNewEventBtn.cloneNode(true);
+  saveNewEventBtn.parentNode.replaceChild(newSaveBtn, saveNewEventBtn);
   
-  cancelNewEventBtn.onclick = function() {
+  const newCancelBtn = cancelNewEventBtn.cloneNode(true);
+  cancelNewEventBtn.parentNode.replaceChild(newCancelBtn, cancelNewEventBtn);
+  
+  // Set up button handlers with direct event listeners
+  newSaveBtn.addEventListener('click', function() {
+    saveNewEvent(calendar);
+  });
+  
+  newCancelBtn.addEventListener('click', function() {
     createEventModal.style.display = 'none';
     removeOverlay();
-  };
+  });
 }
 
 // Function to save the new event
@@ -402,7 +415,7 @@ export async function saveNewEvent(calendar) {
     return;
   }
   
-  // Debug token to check format (you can remove this in production)
+  // Debug token to check format
   console.log('Using token for event creation:', token.substring(0, 10) + '...');
   
   // Hide modal
@@ -411,6 +424,8 @@ export async function saveNewEvent(calendar) {
   showLoading('Creating event...');
   
   try {
+    console.log('Sending POST request to create event with date:', dateStr);
+    
     const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
       method: 'POST',
       headers: {
@@ -433,6 +448,7 @@ export async function saveNewEvent(calendar) {
     }
     
     const data = await res.json();
+    console.log('Successful response:', data);
     
     hideLoading();
     removeOverlay();

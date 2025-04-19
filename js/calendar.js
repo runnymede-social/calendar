@@ -2,15 +2,15 @@
 import { setupStyles } from './styles.js';
 import { createAllModals, showLoading, hideLoading, showToast, createOverlay, removeOverlay } from './ui-components.js';
 import { showEventModal, showDayEventsModal, createEventPrompt, updateEventDots, editEvent, deleteEvent, saveNewEvent } from './event-handlers.js';
-import { preventZoom, forceCalendarSize } from './utils.js';
+import { forceCalendarSize } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Calendar with no zoom on input - ' + new Date().toISOString());
+  console.log('Calendar app initialization - ' + new Date().toISOString());
   
-  // Add meta tag to prevent zooming on inputs
+  // Add meta tag for viewport
   const metaTag = document.createElement('meta');
   metaTag.name = 'viewport';
-  metaTag.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+  metaTag.content = 'width=device-width, initial-scale=1';
   document.head.appendChild(metaTag);
   
   const token = localStorage.getItem('calendarToken');
@@ -90,14 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
       removeOverlay();
     }
   });
-  
-  // Apply the zoom prevention to all inputs and textareas
-  document.addEventListener('DOMContentLoaded', function() {
-    const fields = document.querySelectorAll('input, textarea');
-    for (let i = 0; i < fields.length; i++) {
-      fields[i].addEventListener('touchend', preventZoom, false);
-    }
-  });
 
   // Initialize calendar
   const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -141,6 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     
     dateClick: function(info) {
+      console.log('Date clicked:', info.dateStr, 'isMobile:', isMobile);
       if (isMobile) {
         showDayEventsModal(info.date, info.dateStr, calendar, isMobile, token);
       } else {
@@ -212,6 +205,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const res = await fetch('https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events', {
         headers: { Authorization: 'Bearer ' + token }
       });
+
+      if (!res.ok) {
+        throw new Error(`Failed to load events: ${res.status} ${res.statusText}`);
+      }
 
       const events = await res.json();
       events.forEach(ev => {
