@@ -1,8 +1,8 @@
-// CSS styling for the calendar application - Compact Full Screen Layout
+// CSS styling for the calendar application - With better bottom spacing
 export function setupStyles() {
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
-    /* Modern Calendar Theme - Updated Styles for Full Screen with Visible Reminders */
+    /* Modern Calendar Theme - Updated Styles with proper bottom spacing */
     :root {
       --primary-color: #4361ee;
       --secondary-color: #3a0ca3;
@@ -22,14 +22,13 @@ export function setupStyles() {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
-      height: 100vh;
-      overflow: hidden; /* Prevent scrolling on body */
+      min-height: 100vh;
+      overflow-y: auto; /* Allow vertical scrolling if needed */
     }
     
     /* Full-screen container setup */
     .container {
       width: 100%;
-      height: 100vh;
       padding: 0;
       max-width: 100% !important;
       display: flex;
@@ -54,8 +53,8 @@ export function setupStyles() {
       background-color: white !important;
       border: 1px solid #e0e0e0 !important;
       /* Take up most of the viewport but leave space for reminders */
-      height: calc(88vh - 30px) !important;
-      margin: 15px 20px 5px 20px !important;
+      height: calc(82vh) !important;
+      margin: 15px 20px 10px 20px !important;
     }
     
     /* Force all borders to be visible */
@@ -314,23 +313,23 @@ export function setupStyles() {
     /* IMPORTANT: Full-screen calendar for desktop */
     @media (min-width: 769px) {
       #calendar {
-        /* Take up 88% of the viewport height to leave room for reminders */
-        height: calc(88vh - 30px) !important;
-        margin: 15px 20px 5px 20px !important;
+        /* Take up less space to ensure reminders are fully visible */
+        height: calc(80vh) !important;
+        margin: 15px 20px 10px 20px !important;
         max-width: none !important; /* Remove max-width constraint */
       }
       
       /* For shorter calendar cells to fit everything */
       .fc-view-harness {
-        min-height: calc(88vh - 150px) !important;
+        min-height: calc(80vh - 150px) !important;
       }
       
       .fc .fc-daygrid-day {
-        min-height: calc((88vh - 150px) / 6) !important; /* Dividing by approx number of rows */
+        min-height: calc((80vh - 150px) / 6) !important; /* Dividing by approx number of rows */
       }
       
       .fc-daygrid-day-frame {
-        min-height: calc((88vh - 150px) / 6) !important;
+        min-height: calc((80vh - 150px) / 6) !important;
       }
       
       /* Force larger calendar on desktop */
@@ -548,15 +547,15 @@ export function setupStyles() {
       }
     }
     
-    /* Calendar Messages Section - COMPACT VERSION */
+    /* Calendar Messages Section - More visible */
     #calendar-messages {
-      margin: 5px 20px 15px 20px !important;
+      margin: 10px 20px 30px 20px !important; /* Increased bottom margin */
       padding: 10px 15px !important;
       border-radius: var(--border-radius);
       background-color: white;
       box-shadow: var(--box-shadow);
-      /* Fixed height to ensure it's always visible */
-      height: calc(12vh - 25px) !important;
+      min-height: 80px; /* Ensure a minimum height */
+      max-height: calc(18vh); /* Maximum height */
       overflow-y: auto; /* Add scrollbar if content exceeds height */
     }
     
