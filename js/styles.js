@@ -1,4 +1,4 @@
-// CSS styling for the calendar application - With better bottom spacing
+// CSS styling for the calendar application - With fixed mobile logout button
 export function setupStyles() {
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
@@ -478,16 +478,28 @@ export function setupStyles() {
       #logoutBtn {
         font-size: 12px;
         padding: 6px 10px;
+        min-width: 80px; /* Ensure minimum width for text */
       }
       
-      /* Hide text on very small screens */
+      /* Fix for very small screens to still show text */
       @media (max-width: 400px) {
+        #logoutContainer {
+          width: auto; /* Allow it to be as wide as needed */
+          max-width: unset; /* Remove any max-width constraint */
+        }
+        
+        #logoutBtn {
+          padding-right: 10px !important; /* Ensure right padding */
+        }
+        
         #logoutBtnText {
-          display: none;
+          display: inline-block !important; /* Force display of text */
+          width: auto !important; /* Allow natural width */
+          white-space: nowrap !important; /* Prevent wrapping */
         }
         
         #logoutBtn svg {
-          margin-right: 0;
+          margin-right: 5px !important; /* Ensure margin */
         }
       }
       
