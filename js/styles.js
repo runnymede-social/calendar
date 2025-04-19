@@ -324,6 +324,13 @@ export function setupStyles() {
         overflow: visible !important;
         height: auto !important;
       }
+      
+      /* Make calendar-messages match calendar width on desktop */
+      #calendar-messages {
+        max-width: 1200px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
     }
     
     /* Loading indicator styles */
