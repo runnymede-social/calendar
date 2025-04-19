@@ -155,6 +155,9 @@ document.addEventListener('DOMContentLoaded', function () {
       info.jsEvent.preventDefault();
     }
   });
+  
+  // Add the calendar instance to window for global access
+  window.calendarInstance = calendar;
 
   // Handle window resize to update mobile state
   window.addEventListener('resize', function() {
@@ -257,6 +260,4 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // Apply one final resize after everything else has loaded
   window.addEventListener('load', function() {
-    setTimeout(() => forceCalendarSize(calendarEl, isMobile), 200);
-  });
-});
+    setTimeout(() => forceCalendarSize(

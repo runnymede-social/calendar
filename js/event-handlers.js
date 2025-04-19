@@ -4,7 +4,7 @@
 import { createOverlay, removeOverlay, showToast, showLoading, hideLoading, createEditModal, createDeleteModal } from './ui-components.js';
 
 // Function to show event modal
-export function showEventModal(event, token, calendar, isMobile) {
+export function showEventModal(event, calendar, isMobile, token) {
   const eventModal = document.getElementById('eventModal');
   const modalTitleEl = document.getElementById('modalTitle');
   const modalDescEl = document.getElementById('modalDesc');
@@ -48,7 +48,7 @@ export function showEventModal(event, token, calendar, isMobile) {
 }
 
 // Function to show day events modal on mobile
-export function showDayEventsModal(date, dateStr, calendar, isMobile) {
+export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   const formattedDate = date.toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
@@ -106,7 +106,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile) {
         dayEventsModal.style.display = 'none';
         
         // Show event modal
-        showEventModal(event);
+        showEventModal(event, calendar, isMobile, token);
       });
       
       dayEventsListEl.appendChild(li);
@@ -125,7 +125,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile) {
     // Remove this handler to prevent duplicates
     addEventBtn.removeEventListener('click', addEventHandler);
     // Call createEventPrompt with this date
-    createEventPrompt(dateStr);
+    createEventPrompt(dateStr, calendar, token);
   });
   
   // Set up close button
@@ -326,7 +326,7 @@ export async function deleteEvent(event, token, calendar, isMobile) {
 }
 
 // Function to prompt for new event creation
-export function createEventPrompt(dateStr, token) {
+export function createEventPrompt(dateStr, calendar, token) {
   // Use modal instead of browser prompts
   createOverlay();
   
@@ -347,6 +347,9 @@ export function createEventPrompt(dateStr, token) {
   // Store the date for later use
   createEventModal.dataset.date = dateStr;
   
+  // Also store the token in a data attribute (this is secure in this context)
+  createEventModal.dataset.token = token;
+  
   // Clear any previous values
   newEventTitleInput.value = '';
   newEventDescInput.value = '';
@@ -361,7 +364,7 @@ export function createEventPrompt(dateStr, token) {
   
   // Set up button handlers with direct event listeners
   saveNewEventBtn.onclick = function() {
-    saveNewEvent(token);
+    saveNewEvent(calendar);
   };
   
   cancelNewEventBtn.onclick = function() {
@@ -371,7 +374,7 @@ export function createEventPrompt(dateStr, token) {
 }
 
 // Function to save the new event
-export async function saveNewEvent(token) {
+export async function saveNewEvent(calendar) {
   const createEventModal = document.getElementById('createEventModal');
   const newEventTitleInput = document.getElementById('newEventTitle');
   const newEventDescInput = document.getElementById('newEventDesc');
@@ -388,6 +391,19 @@ export async function saveNewEvent(token) {
   const who = newEventWhoInput.value.trim();
   const when = newEventWhenInput.value.trim();
   const dateStr = createEventModal.dataset.date;
+  
+  // Get token from data attribute or from localStorage as fallback
+  const token = createEventModal.dataset.token || localStorage.getItem('calendarToken');
+  
+  if (!token) {
+    showToast('Authentication error. Please log in again.', 'error');
+    // Redirect to login page
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  // Debug token to check format (you can remove this in production)
+  console.log('Using token for event creation:', token.substring(0, 10) + '...');
   
   // Hide modal
   createEventModal.style.display = 'none';
@@ -410,16 +426,19 @@ export async function saveNewEvent(token) {
       })
     });
 
+    // Check status before trying to parse JSON
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Failed to create event: ${res.status} ${res.statusText} - ${errorText}`);
+    }
+    
     const data = await res.json();
     
     hideLoading();
     removeOverlay();
     
-    if (!res.ok || !data.id) throw new Error('Failed to create event');
+    if (!data.id) throw new Error('No event ID returned from server');
 
-    // Get the calendar reference from the global window object
-    const calendar = window.calendarInstance;
-    
     // Add the event to the calendar
     calendar.addEvent({
       id: data.id,
@@ -443,7 +462,18 @@ export async function saveNewEvent(token) {
   } catch (err) {
     hideLoading();
     removeOverlay();
-    showToast('Create error: ' + err.message, 'error');
+    console.error('Event creation error:', err);
+    
+    if (err.message.includes('401')) {
+      showToast('Session expired. Please log in again.', 'error');
+      // Optional: Redirect to login page after a delay
+      setTimeout(() => {
+        localStorage.removeItem('calendarToken');
+        window.location.href = 'index.html';
+      }, 2000);
+    } else {
+      showToast('Create error: ' + err.message, 'error');
+    }
   }
 }
 
