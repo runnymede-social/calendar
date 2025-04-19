@@ -1,4 +1,4 @@
-// CSS styling for the calendar application - With fixed mobile logout button
+// CSS styling for the calendar application - With fixed mobile logout button position
 export function setupStyles() {
   const forceDesktopStyles = document.createElement('style');
   forceDesktopStyles.textContent = `
@@ -423,6 +423,7 @@ export function setupStyles() {
       #calendar {
         height: auto !important;
         margin: 10px !important;
+        margin-top: 45px !important; /* Add extra margin at top for logout button */
         border-radius: var(--border-radius) !important;
         width: calc(100% - 20px) !important; /* Fix width issue */
         border: 1px solid #e0e0e0 !important; /* Add border for mobile */
@@ -465,42 +466,32 @@ export function setupStyles() {
         max-width: 350px;
       }
       
-      /* Mobile specific logout button */
+      /* Mobile specific logout button - repositioned */
       #logoutContainer {
+        /* Position below the header instead of on top */
         position: absolute;
         text-align: right;
-        margin-bottom: 10px;
-        right: 15px;
-        top: 10px;
+        right: 10px;
+        top: 40px; /* Position below the Runnymede Calendar title */
         z-index: 100;
       }
       
       #logoutBtn {
         font-size: 12px;
-        padding: 6px 10px;
-        min-width: 80px; /* Ensure minimum width for text */
+        padding: 4px 8px;
+        background-color: #f8f9fa !important;
+        border: 1px solid #e0e0e0 !important;
+        min-width: 70px; /* Ensure minimum width for text */
       }
       
-      /* Fix for very small screens to still show text */
-      @media (max-width: 400px) {
-        #logoutContainer {
-          width: auto; /* Allow it to be as wide as needed */
-          max-width: unset; /* Remove any max-width constraint */
-        }
-        
-        #logoutBtn {
-          padding-right: 10px !important; /* Ensure right padding */
-        }
-        
-        #logoutBtnText {
-          display: inline-block !important; /* Force display of text */
-          width: auto !important; /* Allow natural width */
-          white-space: nowrap !important; /* Prevent wrapping */
-        }
-        
-        #logoutBtn svg {
-          margin-right: 5px !important; /* Ensure margin */
-        }
+      #logoutBtnText {
+        display: inline-block !important;
+      }
+      
+      #logoutBtn svg {
+        margin-right: 5px;
+        width: 12px !important;
+        height: 12px !important;
       }
       
       .day-events-list {
