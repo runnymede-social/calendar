@@ -521,6 +521,70 @@ export function setupStyles() {
         margin-top: 3px;
       }
     }
+    
+    /* Calendar Messages Section */
+    #calendar-messages {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      background-color: white;
+      box-shadow: var(--box-shadow);
+    }
+    
+    #calendar-messages h3 {
+      margin-top: 0;
+      color: var(--dark-color);
+      font-size: 1.2rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    
+    .message-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-left: 4px solid var(--primary-color);
+      background-color: var(--light-color);
+      border-radius: var(--event-radius);
+    }
+    
+    .message-date {
+      font-weight: bold;
+      color: #666;
+      margin-right: 8px;
+    }
+    
+    .message-text {
+      color: var(--dark-color);
+    }
+    
+    .message-priority-high {
+      border-left-color: var(--accent-color-2);
+    }
+    
+    .message-priority-medium {
+      border-left-color: var(--accent-color-1);
+    }
+    
+    .message-priority-low {
+      border-left-color: var(--primary-color);
+    }
+    
+    /* Line break preservation for descriptions */
+    .event-description, 
+    #modalDesc,
+    .day-events-list li .event-description {
+      white-space: pre-wrap !important;
+    }
+    
+    /* Make textareas preserve line breaks and resize vertically */
+    textarea {
+      white-space: pre-wrap !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      resize: vertical !important;
+      min-height: 80px !important;
+    }
   `;
   document.head.appendChild(forceDesktopStyles);
 }

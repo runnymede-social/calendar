@@ -70,25 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     
-    // Close event modal when clicking outside
-    if (modals.eventModal.style.display === 'block' && !modals.eventModal.contains(event.target) &&
-        !event.target.closest('.day-events-list li')) {
-      modals.eventModal.style.display = 'none';
-      removeOverlay();
-    }
-    
-    // Close create event modal when clicking outside
-    if (modals.createEventModal.style.display === 'block' && !modals.createEventModal.contains(event.target)) {
-      modals.createEventModal.style.display = 'none';
-      removeOverlay();
-    }
-    
-    // Close day events modal when clicking outside
-    if (modals.dayEventsModal.style.display === 'block' && !modals.dayEventsModal.contains(event.target) &&
-        !event.target.closest('.fc-daygrid-day')) {
-      modals.dayEventsModal.style.display = 'none';
-      removeOverlay();
-    }
+    // Modal outside click handlers removed - modals will only close via buttons
   });
 
   // Initialize calendar
@@ -249,19 +231,19 @@ document.addEventListener('DOMContentLoaded', function () {
         el.style.cursor = 'pointer';
       });
       
-      // Add reminders section
+      // Add important messages section
       const messagesContainer = document.createElement('div');
       messagesContainer.id = 'calendar-messages';
       messagesContainer.innerHTML = `
-        <h3>Reminders</h3>
+        <h3>Important Messages</h3>
         <div id="messages-list">
           <div class="message-item message-priority-high">
-            <span class="message-date">April 22</span>
-            <span class="message-text">Choir practice on Tuesday instead of the usual Monday </span>
+            <span class="message-date">Apr 22</span>
+            <span class="message-text">Choir practice will be held at the Community Center today instead of the usual location.</span>
           </div>
           <div class="message-item message-priority-medium">
-            <span class="message-date">May 10</span>
-            <span class="message-text">Friends and Family concert.</span>
+            <span class="message-date">Apr 25</span>
+            <span class="message-text">Remember to bring your music sheets for the weekend rehearsal.</span>
           </div>
         </div>
       `;

@@ -3,7 +3,7 @@
 
 import { createOverlay, removeOverlay, showToast, showLoading, hideLoading, createEditModal, createDeleteModal } from './ui-components.js';
 
-// Function to show event modal
+// Function to show event modal - VIEWING ONLY
 export function showEventModal(event, calendar, isMobile, token) {
   const eventModal = document.getElementById('eventModal');
   const modalTitleEl = document.getElementById('modalTitle');
@@ -21,6 +21,9 @@ export function showEventModal(event, calendar, isMobile, token) {
 
   createOverlay();
   modalTitleEl.textContent = event.title;
+  
+  // Preserve line breaks in description by using white-space: pre-wrap
+  modalDescEl.style.whiteSpace = 'pre-wrap';
   modalDescEl.textContent = event.extendedProps.description || '(No description)';
   
   // Add Who and When information
@@ -45,9 +48,27 @@ export function showEventModal(event, calendar, isMobile, token) {
     eventModal.style.display = 'none';
     removeOverlay();
   };
+  
+  // Add ability to close VIEW modal by clicking outside
+  // (but not for edit modals which will be handled differently)
+  const closeViewModalListener = function(e) {
+    if (eventModal.style.display === 'block' && 
+        !eventModal.contains(e.target) && 
+        !e.target.closest('.day-events-list li')) {
+      eventModal.style.display = 'none';
+      removeOverlay();
+      // Remove this event listener once triggered
+      document.removeEventListener('click', closeViewModalListener);
+    }
+  };
+  
+  // Add the event listener with a slight delay to prevent immediate triggering
+  setTimeout(() => {
+    document.addEventListener('click', closeViewModalListener);
+  }, 100);
 }
 
-// Function to show day events modal on mobile
+// Function to show day events modal on mobile - VIEWING ONLY
 export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   const formattedDate = date.toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -87,7 +108,8 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
       let html = `<div class="event-title">${event.title}</div>`;
       
       if (event.extendedProps.description) {
-        html += `<div class="event-description">${event.extendedProps.description}</div>`;
+        // Preserve line breaks in description by using a div with white-space: pre-wrap
+        html += `<div class="event-description" style="white-space: pre-wrap;">${event.extendedProps.description}</div>`;
       }
       
       if (event.extendedProps.who) {
@@ -122,9 +144,7 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   createOverlay();
   dayEventsModal.style.display = 'block';
   
-  // SIMPLE FIX: Just use direct onclick assignments
-  
-  // Clear old handler and set new one
+  // Set up buttons
   addEventBtn.onclick = null;
   addEventBtn.onclick = function() {
     console.log('Add event button clicked for date:', dateStr);
@@ -137,15 +157,31 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
     }, 50);
   };
   
-  // Clear old handler and set new one
   closeDayModalBtn.onclick = null;
   closeDayModalBtn.onclick = function() {
     dayEventsModal.style.display = 'none';
     removeOverlay();
   };
+  
+  // Add ability to close VIEW modal by clicking outside
+  const closeDayModalListener = function(e) {
+    if (dayEventsModal.style.display === 'block' && 
+        !dayEventsModal.contains(e.target) && 
+        !e.target.closest('.fc-daygrid-day')) {
+      dayEventsModal.style.display = 'none';
+      removeOverlay();
+      // Remove listener once triggered
+      document.removeEventListener('click', closeDayModalListener);
+    }
+  };
+  
+  // Add with a delay to prevent immediate triggering
+  setTimeout(() => {
+    document.addEventListener('click', closeDayModalListener);
+  }, 100);
 }
 
-// Function to edit an event
+// Function to edit an event - EDITING (no outside click closing)
 export async function editEvent(event, token, calendar, isMobile) {
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
@@ -165,6 +201,9 @@ export async function editEvent(event, token, calendar, isMobile) {
   const saveEditBtn = document.getElementById('saveEditBtn');
   const cancelEditBtn = document.getElementById('cancelEditBtn');
   
+  // Apply white-space: pre-wrap to textarea to preserve line breaks
+  editDescInput.style.whiteSpace = 'pre-wrap';
+  
   // Focus on title
   setTimeout(() => editTitleInput.focus(), 100);
   
@@ -176,7 +215,7 @@ export async function editEvent(event, token, calendar, isMobile) {
       return;
     }
     
-    const newDesc = editDescInput.value.trim();
+    const newDesc = editDescInput.value;  // Don't trim() to preserve line breaks
     const newWho = editWhoInput.value.trim();
     const newWhen = editWhenInput.value.trim();
     
@@ -232,26 +271,10 @@ export async function editEvent(event, token, calendar, isMobile) {
     removeOverlay();
   };
   
-  // Handle clicks outside the modal
-  const closeEditModalListener = function(e) {
-    if (editModal.style.display === 'block' && !editModal.contains(e.target)) {
-      editModal.style.display = 'none';
-      if (editModal.parentNode) {
-        document.body.removeChild(editModal);
-      }
-      removeOverlay();
-      // Remove this event listener once it's been triggered
-      document.removeEventListener('click', closeEditModalListener);
-    }
-  };
-  
-  // Add the event listener with a delay to prevent immediate triggering
-  setTimeout(() => {
-    document.addEventListener('click', closeEditModalListener);
-  }, 100);
+  // No outside click handler for edit modal - must use buttons
 }
 
-// Function to delete an event
+// Function to delete an event - EDITING (no outside click closing)
 export async function deleteEvent(event, token, calendar, isMobile) {
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
@@ -312,26 +335,10 @@ export async function deleteEvent(event, token, calendar, isMobile) {
     removeOverlay();
   };
   
-  // Handle clicks outside the modal
-  const closeConfirmModalListener = function(e) {
-    if (confirmModal.style.display === 'block' && !confirmModal.contains(e.target)) {
-      confirmModal.style.display = 'none';
-      if (confirmModal.parentNode) {
-        document.body.removeChild(confirmModal);
-      }
-      removeOverlay();
-      // Remove this event listener once it's been triggered
-      document.removeEventListener('click', closeConfirmModalListener);
-    }
-  };
-  
-  // Add the event listener with a delay to prevent immediate triggering
-  setTimeout(() => {
-    document.addEventListener('click', closeConfirmModalListener);
-  }, 100);
+  // No outside click handler for delete confirmation - must use buttons
 }
 
-// Function to prompt for new event creation
+// Function to prompt for new event creation - EDITING (no outside click closing)
 export function createEventPrompt(dateStr, calendar, token) {
   // Use modal instead of browser prompts
   createOverlay();
@@ -364,6 +371,9 @@ export function createEventPrompt(dateStr, calendar, token) {
   newEventWhoInput.value = '';
   newEventWhenInput.value = '';
   
+  // Make sure textarea preserves line breaks
+  newEventDescInput.style.whiteSpace = 'pre-wrap';
+  
   // Show modal
   createEventModal.style.display = 'block';
   
@@ -383,6 +393,8 @@ export function createEventPrompt(dateStr, calendar, token) {
     createEventModal.style.display = 'none';
     removeOverlay();
   };
+  
+  // No outside click handler for create modal - must use buttons
 }
 
 // Function to save the new event
@@ -399,7 +411,7 @@ export async function saveNewEvent(calendar) {
     return;
   }
   
-  const description = newEventDescInput.value.trim();
+  const description = newEventDescInput.value;  // Don't trim() to preserve line breaks
   const who = newEventWhoInput.value.trim();
   const when = newEventWhenInput.value.trim();
   const dateStr = createEventModal.dataset.date;
