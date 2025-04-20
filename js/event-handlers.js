@@ -11,6 +11,9 @@ import {
   createDeleteModal
 } from './ui-components.js';
 
+// Global map to preserve all event properties
+window.eventPropertiesMap = window.eventPropertiesMap || {};
+
 /**
  * VIEW‑ONLY: Show a modal with event details.
  * Best practice: always remove any stray overlays before opening,
@@ -37,12 +40,34 @@ export function showEventModal(event, calendar, isMobile, token) {
     return;
   }
 
-  // 2) Populate content
+  // 2) Populate content - First check our persistent map for complete properties
+  const savedProps = window.eventPropertiesMap[event.id];
+  
+  // Basic properties
   modalTitleEl.textContent = event.title;
   modalDescEl.style.whiteSpace = 'pre-wrap';
   modalDescEl.textContent = event.extendedProps.description || '(No description)';
-  modalWhoEl.innerHTML  = event.extendedProps.who  ? `<strong>Who:</strong> ${event.extendedProps.who}`   : '';
-  modalWhenEl.innerHTML = event.extendedProps.when ? `<strong>When:</strong> ${event.extendedProps.when}` : '';
+
+  // Use saved props if available, otherwise fall back to extendedProps
+  if (savedProps) {
+    console.log(`Using saved properties for event ${event.id}:`, savedProps);
+    modalWhoEl.innerHTML = savedProps.who ? `<strong>Who:</strong> ${savedProps.who}` : '';
+    modalWhenEl.innerHTML = savedProps.when ? `<strong>When:</strong> ${savedProps.when}` : '';
+  } else {
+    console.log(`Using extendedProps for event ${event.id}:`, event.extendedProps);
+    modalWhoEl.innerHTML = event.extendedProps.who ? `<strong>Who:</strong> ${event.extendedProps.who}` : '';
+    modalWhenEl.innerHTML = event.extendedProps.when ? `<strong>When:</strong> ${event.extendedProps.when}` : '';
+    
+    // If we found properties in extendedProps, save them to our map for future use
+    if (event.extendedProps.who || event.extendedProps.when) {
+      window.eventPropertiesMap[event.id] = {
+        title: event.title,
+        description: event.extendedProps.description || '',
+        who: event.extendedProps.who || '',
+        when: event.extendedProps.when || ''
+      };
+    }
+  }
 
   // 3) Show overlay + modal
   createOverlay();
@@ -114,19 +139,27 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   dayEventsListEl.innerHTML = '';
   if (dayEvents.length > 0) {
     dayEvents.forEach(ev => {
+      // First check our persistent map for complete properties
+      const savedProps = window.eventPropertiesMap[ev.id];
+      
+      // Use either saved properties or extendedProps
+      const description = savedProps ? savedProps.description : ev.extendedProps.description;
+      const who = savedProps ? savedProps.who : ev.extendedProps.who;
+      const when = savedProps ? savedProps.when : ev.extendedProps.when;
+      
       const li = document.createElement('li');
       li.innerHTML = `
         <div class="event-title">${ev.title}</div>
-        ${ev.extendedProps.description
-          ? `<div class="event-description" style="white-space: pre-wrap;">${ev.extendedProps.description}</div>`
+        ${description
+          ? `<div class="event-description" style="white-space: pre-wrap;">${description}</div>`
           : ''
         }
-        ${ev.extendedProps.who
-          ? `<div class="event-who"><strong>Who:</strong> ${ev.extendedProps.who}</div>`
+        ${who
+          ? `<div class="event-who"><strong>Who:</strong> ${who}</div>`
           : ''
         }
-        ${ev.extendedProps.when
-          ? `<div class="event-when"><strong>When:</strong> ${ev.extendedProps.when}</div>`
+        ${when
+          ? `<div class="event-when"><strong>When:</strong> ${when}</div>`
           : ''
         }
       `;
@@ -134,7 +167,10 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
       li.addEventListener('click', () => {
         dayEventsModal.style.display = 'none';
         removeOverlay();
-        showEventModal(ev, calendar, isMobile, token);
+        // Add a small delay before showing the event modal
+        setTimeout(() => {
+          showEventModal(ev, calendar, isMobile, token);
+        }, 50);
       }, { once: true });
       dayEventsListEl.appendChild(li);
     });
@@ -183,8 +219,21 @@ export async function editEvent(event, token, calendar, isMobile) {
   }
   removeOverlay();
 
-  // Create & show edit modal
-  const editModal = createEditModal(event);
+  // Get the complete properties, either from our map or from the event
+  const savedProps = window.eventPropertiesMap[event.id];
+  const whoValue = savedProps ? savedProps.who : event.extendedProps.who || '';
+  const whenValue = savedProps ? savedProps.when : event.extendedProps.when || '';
+  
+  // Create & show edit modal with the correct properties
+  const editModal = createEditModal({
+    ...event,
+    extendedProps: {
+      ...event.extendedProps,
+      who: whoValue,
+      when: whenValue
+    }
+  });
+  
   createOverlay();
 
   const editTitleInput  = document.getElementById('editEventTitle');
@@ -234,6 +283,15 @@ export async function editEvent(event, token, calendar, isMobile) {
 
       if (!res.ok) throw new Error('Failed to update');
 
+      // Update our persistent map with the new values
+      window.eventPropertiesMap[event.id] = {
+        title: newTitle,
+        description: newDesc,
+        who: newWho,
+        when: newWhen
+      };
+
+      // Update the calendar event
       event.setProp('title', newTitle);
       event.setExtendedProp('description', newDesc);
       event.setExtendedProp('who', newWho);
@@ -265,12 +323,20 @@ export async function deleteEvent(event, token, calendar, isMobile) {
   }
   removeOverlay();
 
-  const confirmModal    = createDeleteModal(event);
+  const confirmModal = createDeleteModal(event);
   createOverlay();
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-  const cancelDeleteBtn  = document.getElementById('cancelDeleteBtn');
+  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
-  confirmDeleteBtn.addEventListener('click', async () => {
+  // Create unique IDs for buttons to prevent stale handlers
+  const confirmBtnId = 'confirmDelete_' + new Date().getTime();
+  const cancelBtnId = 'cancelDelete_' + new Date().getTime();
+  
+  // Update button IDs
+  confirmDeleteBtn.id = confirmBtnId;
+  cancelDeleteBtn.id = cancelBtnId;
+
+  document.getElementById(confirmBtnId).addEventListener('click', async () => {
     confirmModal.style.display = 'none';
     document.body.removeChild(confirmModal);
     showLoading('Deleting event...');
@@ -290,6 +356,10 @@ export async function deleteEvent(event, token, calendar, isMobile) {
       removeOverlay();
 
       if (!res.ok) throw new Error('Failed to delete event');
+      
+      // Remove from our persistent map
+      delete window.eventPropertiesMap[event.id];
+      
       event.remove();
       if (isMobile) updateEventDots(calendar, isMobile);
       showToast('Event deleted successfully!', 'success');
@@ -300,11 +370,29 @@ export async function deleteEvent(event, token, calendar, isMobile) {
     }
   }, { once: true });
 
-  cancelDeleteBtn.addEventListener('click', () => {
+  document.getElementById(cancelBtnId).addEventListener('click', () => {
     confirmModal.style.display = 'none';
     document.body.removeChild(confirmModal);
     removeOverlay();
   }, { once: true });
+  
+  // Handle clicks on the overlay
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) {
+    const overlayClickHandler = function(e) {
+      if (e.target === overlay) {
+        confirmModal.style.display = 'none';
+        if (confirmModal.parentNode) {
+          document.body.removeChild(confirmModal);
+        }
+        removeOverlay();
+        // Remove this event listener
+        overlay.removeEventListener('click', overlayClickHandler);
+      }
+    };
+    
+    overlay.addEventListener('click', overlayClickHandler, { once: true });
+  }
 }
 
 /**
@@ -409,6 +497,14 @@ export async function saveNewEvent(calendar) {
     removeOverlay();
     if (!data.id) throw new Error('No event ID returned from server');
 
+    // Store in our persistent map
+    window.eventPropertiesMap[data.id] = {
+      title,
+      description,
+      who,
+      when
+    };
+
     calendar.addEvent({
       id:       data.id,
       title,
@@ -462,4 +558,3 @@ export function updateEventDots(calendar, isMobile) {
     }
   });
 }
-
