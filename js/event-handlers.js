@@ -335,18 +335,17 @@ export async function deleteEvent(event, token, calendar, isMobile) {
 
   const confirmModal = createDeleteModal(event);
   createOverlay();
+  
+  // Get the buttons after the modal is created and added to the DOM
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
 
-  // Create unique IDs for buttons to prevent stale handlers
-  const confirmBtnId = 'confirmDelete_' + new Date().getTime();
-  const cancelBtnId = 'cancelDelete_' + new Date().getTime();
-  
-  // Update button IDs
-  confirmDeleteBtn.id = confirmBtnId;
-  cancelDeleteBtn.id = cancelBtnId;
+  if (!confirmDeleteBtn || !cancelDeleteBtn) {
+    console.error('Delete buttons not found in modal!');
+    return;
+  }
 
-  document.getElementById(confirmBtnId).addEventListener('click', async () => {
+  confirmDeleteBtn.addEventListener('click', async () => {
     confirmModal.style.display = 'none';
     document.body.removeChild(confirmModal);
     showLoading('Deleting event...');
@@ -380,7 +379,7 @@ export async function deleteEvent(event, token, calendar, isMobile) {
     }
   }, { once: true });
 
-  document.getElementById(cancelBtnId).addEventListener('click', () => {
+  cancelDeleteBtn.addEventListener('click', () => {
     confirmModal.style.display = 'none';
     document.body.removeChild(confirmModal);
     removeOverlay();
@@ -396,7 +395,6 @@ export async function deleteEvent(event, token, calendar, isMobile) {
           document.body.removeChild(confirmModal);
         }
         removeOverlay();
-        // Remove this event listener
         overlay.removeEventListener('click', overlayClickHandler);
       }
     };
