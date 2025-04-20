@@ -327,80 +327,87 @@ export async function editEvent(event, token, calendar, isMobile) {
  * EDIT‑MODE: Confirm & delete an event.
  */
 export async function deleteEvent(event, token, calendar, isMobile) {
+  console.log('deleteEvent function called for event:', event.title);
+  
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
   }
   removeOverlay();
 
+  // Create the delete confirmation modal
   const confirmModal = createDeleteModal(event);
+  console.log('Delete confirmation modal created:', confirmModal);
+  
   createOverlay();
   
-  // Get the buttons after the modal is created and added to the DOM
-  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-
-  if (!confirmDeleteBtn || !cancelDeleteBtn) {
-    console.error('Delete buttons not found in modal!');
-    return;
-  }
-
-  confirmDeleteBtn.addEventListener('click', async () => {
-    confirmModal.style.display = 'none';
-    document.body.removeChild(confirmModal);
-    showLoading('Deleting event...');
-    try {
-      const res = await fetch(
-        'https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events',
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization:    'Bearer ' + token
-          },
-          body: JSON.stringify({ id: event.id })
-        }
-      );
-      hideLoading();
-      removeOverlay();
-
-      if (!res.ok) throw new Error('Failed to delete event');
-      
-      // Remove from our persistent map
-      delete window.eventPropertiesMap[event.id];
-      
-      event.remove();
-      if (isMobile) updateEventDots(calendar, isMobile);
-      showToast('Event deleted successfully!', 'success');
-    } catch (err) {
-      hideLoading();
-      removeOverlay();
-      showToast('Delete error: ' + err.message, 'error');
-    }
-  }, { once: true });
-
-  cancelDeleteBtn.addEventListener('click', () => {
-    confirmModal.style.display = 'none';
-    document.body.removeChild(confirmModal);
-    removeOverlay();
-  }, { once: true });
+  // Log the HTML content to inspect what's there
+  console.log('Modal HTML:', confirmModal.outerHTML);
   
-  // Handle clicks on the overlay
-  const overlay = document.getElementById('modalOverlay');
-  if (overlay) {
-    const overlayClickHandler = function(e) {
-      if (e.target === overlay) {
-        confirmModal.style.display = 'none';
-        if (confirmModal.parentNode) {
-          document.body.removeChild(confirmModal);
-        }
+  // Wait a brief moment for DOM to update
+  setTimeout(() => {
+    // Get direct references to the buttons
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    
+    console.log('Confirm button found:', confirmDeleteBtn);
+    console.log('Cancel button found:', cancelDeleteBtn);
+    
+    if (!confirmDeleteBtn || !cancelDeleteBtn) {
+      console.error('Delete buttons not found in modal!');
+      return;
+    }
+    
+    // Add direct onclick handlers instead of event listeners
+    confirmDeleteBtn.onclick = async function() {
+      console.log('Confirm delete button clicked');
+      confirmModal.style.display = 'none';
+      if (confirmModal.parentNode) {
+        document.body.removeChild(confirmModal);
+      }
+      showLoading('Deleting event...');
+      
+      try {
+        const res = await fetch(
+          'https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events',
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer ' + token
+            },
+            body: JSON.stringify({ id: event.id })
+          }
+        );
+        hideLoading();
         removeOverlay();
-        overlay.removeEventListener('click', overlayClickHandler);
+
+        if (!res.ok) throw new Error('Failed to delete event');
+        
+        // Remove from our persistent map
+        delete window.eventPropertiesMap[event.id];
+        
+        event.remove();
+        if (isMobile) updateEventDots(calendar, isMobile);
+        showToast('Event deleted successfully!', 'success');
+      } catch (err) {
+        hideLoading();
+        removeOverlay();
+        showToast('Delete error: ' + err.message, 'error');
       }
     };
+
+    cancelDeleteBtn.onclick = function() {
+      console.log('Cancel delete button clicked');
+      confirmModal.style.display = 'none';
+      if (confirmModal.parentNode) {
+        document.body.removeChild(confirmModal);
+      }
+      removeOverlay();
+    };
     
-    overlay.addEventListener('click', overlayClickHandler, { once: true });
-  }
+    console.log('Event handlers attached to delete buttons');
+  }, 50);
 }
 
 /**
