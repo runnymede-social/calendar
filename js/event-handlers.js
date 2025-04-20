@@ -325,46 +325,56 @@ export async function editEvent(event, token, calendar, isMobile) {
 
 /**
  * EDIT‑MODE: Confirm & delete an event.
+ * This version uses a simplified approach with an inline modal creation
  */
 export async function deleteEvent(event, token, calendar, isMobile) {
-  console.log('deleteEvent function called for event:', event.title);
-  
+  // Close any existing view modal
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
   }
   removeOverlay();
-
-  // Create the delete confirmation modal
-  const confirmModal = createDeleteModal(event);
-  console.log('Delete confirmation modal created:', confirmModal);
   
+  // Create a simple confirmation directly in this function instead of using createDeleteModal
+  const confirmDiv = document.createElement('div');
+  confirmDiv.id = 'deleteConfirmModal';
+  confirmDiv.className = 'modal';
+  confirmDiv.style.display = 'block';
+  confirmDiv.style.position = 'fixed';
+  confirmDiv.style.zIndex = '1000';
+  confirmDiv.style.left = '50%';
+  confirmDiv.style.top = '50%';
+  confirmDiv.style.transform = 'translate(-50%, -50%)';
+  confirmDiv.style.background = 'white';
+  confirmDiv.style.padding = '20px';
+  confirmDiv.style.borderRadius = '8px';
+  confirmDiv.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+  confirmDiv.style.maxWidth = '90%';
+  confirmDiv.style.width = '400px';
+  
+  confirmDiv.innerHTML = `
+    <h3 style="margin-top: 0; color: #d32f2f;">Delete Event</h3>
+    <p>Are you sure you want to delete "${event.title}"?</p>
+    <p>This action cannot be undone.</p>
+    
+    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+      <button id="realCancelBtn" style="margin-right: 10px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Cancel</button>
+      <button id="realDeleteBtn" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+    </div>
+  `;
+  
+  document.body.appendChild(confirmDiv);
   createOverlay();
   
-  // Log the HTML content to inspect what's there
-  console.log('Modal HTML:', confirmModal.outerHTML);
+  // Use different button IDs to avoid conflicts
+  const realDeleteBtn = document.getElementById('realDeleteBtn');
+  const realCancelBtn = document.getElementById('realCancelBtn');
   
-  // Wait a brief moment for DOM to update
-  setTimeout(() => {
-    // Get direct references to the buttons
-    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-    
-    console.log('Confirm button found:', confirmDeleteBtn);
-    console.log('Cancel button found:', cancelDeleteBtn);
-    
-    if (!confirmDeleteBtn || !cancelDeleteBtn) {
-      console.error('Delete buttons not found in modal!');
-      return;
-    }
-    
-    // Add direct onclick handlers instead of event listeners
-    confirmDeleteBtn.onclick = async function() {
-      console.log('Confirm delete button clicked');
-      confirmModal.style.display = 'none';
-      if (confirmModal.parentNode) {
-        document.body.removeChild(confirmModal);
-      }
+  // Simple promise to handle the result
+  return new Promise((resolve) => {
+    realDeleteBtn.addEventListener('click', async () => {
+      confirmDiv.style.display = 'none';
+      document.body.removeChild(confirmDiv);
       showLoading('Deleting event...');
       
       try {
@@ -390,24 +400,35 @@ export async function deleteEvent(event, token, calendar, isMobile) {
         event.remove();
         if (isMobile) updateEventDots(calendar, isMobile);
         showToast('Event deleted successfully!', 'success');
+        resolve(true);
       } catch (err) {
         hideLoading();
         removeOverlay();
         showToast('Delete error: ' + err.message, 'error');
+        resolve(false);
       }
-    };
+    });
 
-    cancelDeleteBtn.onclick = function() {
-      console.log('Cancel delete button clicked');
-      confirmModal.style.display = 'none';
-      if (confirmModal.parentNode) {
-        document.body.removeChild(confirmModal);
-      }
+    realCancelBtn.addEventListener('click', () => {
+      confirmDiv.style.display = 'none';
+      document.body.removeChild(confirmDiv);
       removeOverlay();
-    };
+      resolve(false);
+    });
     
-    console.log('Event handlers attached to delete buttons');
-  }, 50);
+    // Also add a click handler for the overlay to cancel
+    const overlay = document.getElementById('modalOverlay');
+    if (overlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          confirmDiv.style.display = 'none';
+          document.body.removeChild(confirmDiv);
+          removeOverlay();
+          resolve(false);
+        }
+      });
+    }
+  });
 }
 
 /**
