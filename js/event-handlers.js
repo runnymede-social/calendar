@@ -221,14 +221,18 @@ export async function editEvent(event, token, calendar, isMobile) {
 
   // Get the complete properties, either from our map or from the event
   const savedProps = window.eventPropertiesMap[event.id];
+  // Make sure we have the title
+  const titleValue = savedProps ? savedProps.title : event.title;
+  const descValue = savedProps ? savedProps.description : event.extendedProps.description || '';
   const whoValue = savedProps ? savedProps.who : event.extendedProps.who || '';
   const whenValue = savedProps ? savedProps.when : event.extendedProps.when || '';
   
   // Create & show edit modal with the correct properties
   const editModal = createEditModal({
-    ...event,
+    id: event.id,
+    title: titleValue,
     extendedProps: {
-      ...event.extendedProps,
+      description: descValue,
       who: whoValue,
       when: whenValue
     }
@@ -242,7 +246,12 @@ export async function editEvent(event, token, calendar, isMobile) {
   const editWhenInput   = document.getElementById('editEventWhen');
   const saveEditBtn     = document.getElementById('saveEditBtn');
   const cancelEditBtn   = document.getElementById('cancelEditBtn');
-  editTitleInput.value = event.title;
+  
+  // Set the values explicitly
+  editTitleInput.value = titleValue;
+  editDescInput.value = descValue;
+  editWhoInput.value = whoValue;
+  editWhenInput.value = whenValue;
 
   editDescInput.style.whiteSpace = 'pre-wrap';
   setTimeout(() => editTitleInput.focus(), 100);
