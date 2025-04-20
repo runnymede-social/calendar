@@ -242,6 +242,7 @@ export async function editEvent(event, token, calendar, isMobile) {
   const editWhenInput   = document.getElementById('editEventWhen');
   const saveEditBtn     = document.getElementById('saveEditBtn');
   const cancelEditBtn   = document.getElementById('cancelEditBtn');
+  editTitleInput.value = event.title;
 
   editDescInput.style.whiteSpace = 'pre-wrap';
   setTimeout(() => editTitleInput.focus(), 100);
