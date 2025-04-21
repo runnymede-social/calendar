@@ -240,12 +240,19 @@ export async function editEvent(event, token, calendar, isMobile) {
   
   createOverlay();
 
-  const editTitleInput  = document.getElementById('editEventTitle');
-  const editDescInput   = document.getElementById('editEventDesc');
-  const editWhoInput    = document.getElementById('editEventWho');
-  const editWhenInput   = document.getElementById('editEventWhen');
-  const saveEditBtn     = document.getElementById('saveEditBtn');
-  const cancelEditBtn   = document.getElementById('cancelEditBtn');
+  // Get references to all form elements AFTER the modal is created and added to DOM
+  const editTitleInput = document.getElementById('editEventTitle');
+  const editDescInput = document.getElementById('editEventDesc');
+  const editWhoInput = document.getElementById('editEventWho');
+  const editWhenInput = document.getElementById('editEventWhen');
+  const saveEditBtn = document.getElementById('saveEditBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  
+  if (!editTitleInput || !editDescInput || !editWhoInput || 
+      !editWhenInput || !saveEditBtn || !cancelEditBtn) {
+    console.error('Edit form elements not found!');
+    return;
+  }
   
   // Set the values explicitly
   editTitleInput.value = titleValue;
@@ -256,20 +263,27 @@ export async function editEvent(event, token, calendar, isMobile) {
   editDescInput.style.whiteSpace = 'pre-wrap';
   setTimeout(() => editTitleInput.focus(), 100);
 
-  saveEditBtn.addEventListener('click', async () => {
+  // Use direct onclick handler for save button
+  saveEditBtn.onclick = async function() {
+    console.log('Save button clicked');
     const newTitle = editTitleInput.value.trim();
     if (!newTitle) {
       showToast('Please enter an event title', 'error');
       return;
     }
+    
     const newDesc = editDescInput.value;
-    const newWho  = editWhoInput.value.trim();
+    const newWho = editWhoInput.value.trim();
     const newWhen = editWhenInput.value.trim();
-
+    
+    // Clean up the modal
     editModal.style.display = 'none';
-    document.body.removeChild(editModal);
+    if (editModal.parentNode) {
+      document.body.removeChild(editModal);
+    }
+    
     showLoading('Updating event...');
-
+    
     try {
       const res = await fetch(
         'https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events',
@@ -277,22 +291,23 @@ export async function editEvent(event, token, calendar, isMobile) {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization:    'Bearer ' + token
+            Authorization: 'Bearer ' + token
           },
           body: JSON.stringify({
-            id:          event.id,
-            title:       newTitle,
+            id: event.id,
+            title: newTitle,
             description: newDesc,
-            who:         newWho,
-            when:        newWhen
+            who: newWho,
+            when: newWhen
           })
         }
       );
+      
       hideLoading();
       removeOverlay();
-
-      if (!res.ok) throw new Error('Failed to update');
-
+      
+      if (!res.ok) throw new Error('Failed to update event');
+      
       // Update our persistent map with the new values
       window.eventPropertiesMap[event.id] = {
         title: newTitle,
@@ -300,13 +315,13 @@ export async function editEvent(event, token, calendar, isMobile) {
         who: newWho,
         when: newWhen
       };
-
+      
       // Update the calendar event
       event.setProp('title', newTitle);
       event.setExtendedProp('description', newDesc);
       event.setExtendedProp('who', newWho);
       event.setExtendedProp('when', newWhen);
-
+      
       if (isMobile) updateEventDots(calendar, isMobile);
       showToast('Event updated successfully!', 'success');
     } catch (err) {
@@ -314,119 +329,120 @@ export async function editEvent(event, token, calendar, isMobile) {
       removeOverlay();
       showToast('Update error: ' + err.message, 'error');
     }
-  }, { once: true });
-
-  cancelEditBtn.addEventListener('click', () => {
+  };
+  
+  // Use direct onclick handler for cancel button
+  cancelEditBtn.onclick = function() {
+    console.log('Cancel button clicked');
     editModal.style.display = 'none';
-    document.body.removeChild(editModal);
+    if (editModal.parentNode) {
+      document.body.removeChild(editModal);
+    }
     removeOverlay();
-  }, { once: true });
+  };
 }
 
 /**
  * EDIT‑MODE: Confirm & delete an event.
- * This version uses a simplified approach with an inline modal creation
  */
 export async function deleteEvent(event, token, calendar, isMobile) {
+  console.log('Delete function called for event:', event.title);
+  
   // Close any existing view modal
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
   }
+  
+  // Remove any existing overlays first
   removeOverlay();
   
-  // Create a simple confirmation directly in this function instead of using createDeleteModal
-  const confirmDiv = document.createElement('div');
-  confirmDiv.id = 'deleteConfirmModal';
-  confirmDiv.className = 'modal';
-  confirmDiv.style.display = 'block';
-  confirmDiv.style.position = 'fixed';
-  confirmDiv.style.zIndex = '1000';
-  confirmDiv.style.left = '50%';
-  confirmDiv.style.top = '50%';
-  confirmDiv.style.transform = 'translate(-50%, -50%)';
-  confirmDiv.style.background = 'white';
-  confirmDiv.style.padding = '20px';
-  confirmDiv.style.borderRadius = '8px';
-  confirmDiv.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-  confirmDiv.style.maxWidth = '90%';
-  confirmDiv.style.width = '400px';
+  // Create the delete confirmation modal
+  const confirmModal = createDeleteModal(event);
+  document.body.appendChild(confirmModal);
   
-  confirmDiv.innerHTML = `
-    <h3 style="margin-top: 0; color: #d32f2f;">Delete Event</h3>
-    <p>Are you sure you want to delete "${event.title}"?</p>
-    <p>This action cannot be undone.</p>
-    
-    <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-      <button id="realCancelBtn" style="margin-right: 10px; padding: 8px 16px; background: #f5f5f5; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Cancel</button>
-      <button id="realDeleteBtn" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
-    </div>
-  `;
-  
-  document.body.appendChild(confirmDiv);
+  // Create overlay
   createOverlay();
   
-  // Use different button IDs to avoid conflicts
-  const realDeleteBtn = document.getElementById('realDeleteBtn');
-  const realCancelBtn = document.getElementById('realCancelBtn');
+  // Find the buttons AFTER the modal is added to the DOM
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
   
-  // Simple promise to handle the result
+  // Add event handlers using a Promise
   return new Promise((resolve) => {
-    realDeleteBtn.addEventListener('click', async () => {
-      confirmDiv.style.display = 'none';
-      document.body.removeChild(confirmDiv);
-      showLoading('Deleting event...');
-      
-      try {
-        const res = await fetch(
-          'https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events',
-          {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: 'Bearer ' + token
-            },
-            body: JSON.stringify({ id: event.id })
-          }
-        );
-        hideLoading();
-        removeOverlay();
-
-        if (!res.ok) throw new Error('Failed to delete event');
+    if (confirmDeleteBtn) {
+      confirmDeleteBtn.onclick = async function() {
+        console.log('Confirm delete clicked');
         
-        // Remove from our persistent map
-        delete window.eventPropertiesMap[event.id];
-        
-        event.remove();
-        if (isMobile) updateEventDots(calendar, isMobile);
-        showToast('Event deleted successfully!', 'success');
-        resolve(true);
-      } catch (err) {
-        hideLoading();
+        if (confirmModal.parentNode) {
+          confirmModal.parentNode.removeChild(confirmModal);
+        }
         removeOverlay();
-        showToast('Delete error: ' + err.message, 'error');
-        resolve(false);
-      }
-    });
-
-    realCancelBtn.addEventListener('click', () => {
-      confirmDiv.style.display = 'none';
-      document.body.removeChild(confirmDiv);
-      removeOverlay();
-      resolve(false);
-    });
+        
+        showLoading('Deleting event...');
+        
+        try {
+          const res = await fetch(
+            'https://nzlrgp5k96.execute-api.us-east-1.amazonaws.com/dev/events',
+            {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token
+              },
+              body: JSON.stringify({ id: event.id })
+            }
+          );
+          
+          hideLoading();
+          
+          if (!res.ok) throw new Error('Failed to delete event');
+          
+          // Remove from our persistent map
+          delete window.eventPropertiesMap[event.id];
+          
+          // Remove the event from the calendar
+          event.remove();
+          
+          // Update dots if mobile
+          if (isMobile) updateEventDots(calendar, isMobile);
+          
+          showToast('Event deleted successfully!', 'success');
+          resolve(true);
+        } catch (err) {
+          hideLoading();
+          showToast('Delete error: ' + err.message, 'error');
+          resolve(false);
+        }
+      };
+    }
     
-    // Also add a click handler for the overlay to cancel
+    if (cancelDeleteBtn) {
+      cancelDeleteBtn.onclick = function() {
+        console.log('Cancel delete clicked');
+        
+        if (confirmModal.parentNode) {
+          confirmModal.parentNode.removeChild(confirmModal);
+        }
+        removeOverlay();
+        resolve(false);
+      };
+    }
+    
+    // Handle overlay clicks
     const overlay = document.getElementById('modalOverlay');
     if (overlay) {
-      overlay.addEventListener('click', (e) => {
+      overlay.onclick = function(e) {
         if (e.target === overlay) {
-          confirmDiv.style.display = 'none';
-          document.body.removeChild(confirmDiv);
+          console.log('Clicked outside delete modal');
+          
+          if (confirmModal.parentNode) {
+            confirmModal.parentNode.removeChild(confirmModal);
+          }
           removeOverlay();
           resolve(false);
         }
-      });
+      };
     }
   });
 }
@@ -463,14 +479,16 @@ export function createEventPrompt(dateStr, calendar, token) {
   createEventModal.style.display = 'block';
   setTimeout(() => newEventTitleInput.focus(), 100);
 
-  saveNewEventBtn.addEventListener('click', () => {
+  // Use direct onclick handler
+  saveNewEventBtn.onclick = function() {
     saveNewEvent(calendar);
-  }, { once: true });
+  };
 
-  cancelNewEventBtn.addEventListener('click', () => {
+  // Use direct onclick handler
+  cancelNewEventBtn.onclick = function() {
     createEventModal.style.display = 'none';
     removeOverlay();
-  }, { once: true });
+  };
 }
 
 /**
