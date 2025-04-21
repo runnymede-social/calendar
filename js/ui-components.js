@@ -234,7 +234,7 @@ export function createEditModal(event) {
     </div>
     <div class="form-field">
       <label for="editEventContact">Contact:</label>    <!-- new -->
-      <input type="text" id="editEventContact" value="${event.extendedProps.contact||''}" placeholder="Contact info">
+      <input type="text" id="editEventContact" value="${event.extendedProps.contact||''}" placeholder="Number, email, Instagram"">
     </div>
     <div class="form-field">
       <label for="editEventWhen">When:</label>
