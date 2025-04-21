@@ -97,7 +97,7 @@ export function createAllModals() {
     </div>
     <div class="form-field">
       <label for="newEventContact">Contact:</label>    <!-- new -->
-      <input type="text" id="newEventContact" placeholder="Contact info">
+      <input type="text" id="newEventContact" placeholder="Number, email, Instagram">
     </div>
     <div class="form-field">
       <label for="newEventWhen">When:</label>
