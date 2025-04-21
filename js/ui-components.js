@@ -97,7 +97,7 @@ export function createAllModals() {
     </div>
     <div class="form-field">
       <label for="newEventContact">Contact:</label>    <!-- new -->
-      <input type="text" id="newEventContact" placeholder="Number, email, Instagram">
+      <input type="text" id="newEventContact" placeholder="Number, email, Instagram, etc.">
     </div>
     <div class="form-field">
       <label for="newEventWhen">When:</label>
@@ -234,7 +234,7 @@ export function createEditModal(event) {
     </div>
     <div class="form-field">
       <label for="editEventContact">Contact:</label>    <!-- new -->
-      <input type="text" id="editEventContact" value="${event.extendedProps.contact||''}" placeholder="Number, email, Instagram"">
+      <input type="text" id="editEventContact" value="${event.extendedProps.contact||''}" placeholder="Number, email, Instagram, etc.">
     </div>
     <div class="form-field">
       <label for="editEventWhen">When:</label>
