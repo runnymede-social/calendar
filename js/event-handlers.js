@@ -402,6 +402,7 @@ export async function editEvent(event, token, calendar, isMobile) {
 
 /**
  * EDIT‑MODE: Confirm & delete an event.
+ * Using a completely inline approach to avoid modal conflicts
  */
 export async function deleteEvent(event, token, calendar, isMobile) {
   console.log('deleteEvent function called for:', event.title);
@@ -414,41 +415,70 @@ export async function deleteEvent(event, token, calendar, isMobile) {
   
   // Remove any existing overlays and modals
   removeOverlay();
-  document.querySelectorAll('#confirmDeleteModal').forEach(modal => {
-    if (modal && modal.parentNode) {
-      modal.parentNode.removeChild(modal);
-    }
-  });
   
-  // Create the delete confirmation modal
-  const confirmModal = createDeleteModal(event);
-  document.body.appendChild(confirmModal);
+  // Create our own custom confirmation dialog
+  const confirmDiv = document.createElement('div');
+  confirmDiv.id = 'customDeleteModal';
+  confirmDiv.style.display = 'block';
+  confirmDiv.style.position = 'fixed';
+  confirmDiv.style.zIndex = '1000';
+  confirmDiv.style.top = '50%';
+  confirmDiv.style.left = '50%';
+  confirmDiv.style.transform = 'translate(-50%, -50%)';
+  confirmDiv.style.background = '#fff';
+  confirmDiv.style.padding = '1.5rem';
+  confirmDiv.style.border = '1px solid #ccc';
+  confirmDiv.style.borderRadius = '12px';
+  confirmDiv.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+  confirmDiv.style.minWidth = '300px';
+  confirmDiv.style.maxWidth = '90%';
   
-  // Create overlay
-  createOverlay();
+  confirmDiv.innerHTML = `
+    <h3 style="margin-top: 0; color: #212529;">Confirm Delete</h3>
+    <p>Are you sure you want to delete this event: "${event.title}"?</p>
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+      <button id="customConfirmBtn" class="danger-btn" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+      <button id="customCancelBtn" class="default-btn" style="padding: 8px 16px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; cursor: pointer;">Cancel</button>
+    </div>
+  `;
   
-  // Find the buttons AFTER the modal is added to the DOM
-  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-  const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+  // Add the modal to the DOM
+  document.body.appendChild(confirmDiv);
   
-  console.log('Delete modal buttons:', { confirmDeleteBtn, cancelDeleteBtn });
+  // Create a fresh overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'customModalOverlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  overlay.style.zIndex = '999';
+  overlay.style.backdropFilter = 'blur(3px)';
+  document.body.appendChild(overlay);
   
-  // Return a promise to handle async flow
+  // Get the buttons *after* adding to DOM
+  const customConfirmBtn = document.getElementById('customConfirmBtn');
+  const customCancelBtn = document.getElementById('customCancelBtn');
+  
+  console.log('Custom delete modal buttons:', { customConfirmBtn, customCancelBtn });
+  
   return new Promise((resolve) => {
-    // Clear any existing handlers
-    if (confirmDeleteBtn) confirmDeleteBtn.onclick = null;
-    if (cancelDeleteBtn) cancelDeleteBtn.onclick = null;
+    // Define a cleanup function
+    const cleanup = () => {
+      if (confirmDiv && confirmDiv.parentNode) {
+        confirmDiv.parentNode.removeChild(confirmDiv);
+      }
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    };
     
-    // Add new handlers
-    if (confirmDeleteBtn) {
-      confirmDeleteBtn.onclick = async function() {
-        console.log('Confirm delete clicked');
-        
-        // Clean up modal
-        if (confirmModal.parentNode) {
-          document.body.removeChild(confirmModal);
-        }
-        removeOverlay();
+    if (customConfirmBtn) {
+      customConfirmBtn.onclick = async function() {
+        console.log('Custom confirm delete button clicked');
+        cleanup();
         
         showLoading('Deleting event...');
         
@@ -489,31 +519,20 @@ export async function deleteEvent(event, token, calendar, isMobile) {
       };
     }
     
-    if (cancelDeleteBtn) {
-      cancelDeleteBtn.onclick = function() {
-        console.log('Cancel delete clicked');
-        
-        // Clean up modal
-        if (confirmModal.parentNode) {
-          document.body.removeChild(confirmModal);
-        }
-        removeOverlay();
+    if (customCancelBtn) {
+      customCancelBtn.onclick = function() {
+        console.log('Custom cancel delete button clicked');
+        cleanup();
         resolve(false);
       };
     }
     
-    // Handle overlay clicks
-    const overlay = document.getElementById('modalOverlay');
+    // Add click handler to the overlay
     if (overlay) {
       overlay.onclick = function(e) {
         if (e.target === overlay) {
-          console.log('Clicked outside delete modal');
-          
-          // Clean up modal
-          if (confirmModal.parentNode) {
-            document.body.removeChild(confirmModal);
-          }
-          removeOverlay();
+          console.log('Clicked outside custom delete modal');
+          cleanup();
           resolve(false);
         }
       };
