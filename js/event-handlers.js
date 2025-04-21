@@ -21,8 +21,17 @@ window.eventPropertiesMap = window.eventPropertiesMap || {};
  * and clean up outside‑click listeners cleanly.
  */
 export function showEventModal(event, calendar, isMobile, token) {
+  console.log('showEventModal called for:', event.title);
+  
   // 1) Tear down any leftover overlays immediately
   removeOverlay();
+
+  // Reset any existing modal classes to avoid stale styles
+  document.querySelectorAll('.modal').forEach(modal => {
+    if (modal.style.display === 'block') {
+      modal.style.display = 'none';
+    }
+  });
 
   const eventModal   = document.getElementById('eventModal');
   const modalTitleEl = document.getElementById('modalTitle');
@@ -34,7 +43,7 @@ export function showEventModal(event, calendar, isMobile, token) {
   const closeBtn     = document.getElementById('closeBtn');
 
   if (!eventModal || !modalTitleEl || !modalDescEl ||
-      !modalWhoEl  || !modalWhenEl   || !editBtn    ||
+      !modalWhoEl  || !modalWhenEl || !editBtn    ||
       !deleteBtn  || !closeBtn) {
     console.error('❌ Modal elements not found!');
     return;
@@ -73,35 +82,39 @@ export function showEventModal(event, calendar, isMobile, token) {
   createOverlay();
   eventModal.style.display = 'block';
 
-  // 4) Wire up buttons, once-only to avoid duplicates
-  editBtn.addEventListener('click', () => {
+  // 4) Remove any existing handlers before adding new ones
+  editBtn.onclick = null;
+  deleteBtn.onclick = null;
+  closeBtn.onclick = null;
+  
+  // 5) Wire up buttons with direct onclick handlers
+  editBtn.onclick = function() {
+    console.log('Edit button clicked for:', event.title);
     editEvent(event, token, calendar, isMobile);
-  }, { once: true });
+  };
 
-  deleteBtn.addEventListener('click', () => {
+  deleteBtn.onclick = function() {
+    console.log('Delete button clicked for:', event.title);
     deleteEvent(event, token, calendar, isMobile);
-  }, { once: true });
+  };
 
-  closeBtn.addEventListener('click', () => {
+  closeBtn.onclick = function() {
+    console.log('Close button clicked');
     eventModal.style.display = 'none';
     removeOverlay();
-    document.removeEventListener('click', outsideClickHandler);
-  }, { once: true });
-
-  // 5) Outside click listener to close VIEW modal
-  const outsideClickHandler = e => {
-    if (eventModal.style.display === 'block' &&
-        !eventModal.contains(e.target) &&
-        !e.target.closest('.day-events-list li')) {
-      eventModal.style.display = 'none';
-      removeOverlay();
-      document.removeEventListener('click', outsideClickHandler);
-    }
   };
-  // Delay adding to avoid immediate trigger
-  setTimeout(() => {
-    document.addEventListener('click', outsideClickHandler, { once: true });
-  }, 100);
+
+  // 6) Outside click listener to close VIEW modal
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) {
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        console.log('Clicked outside view modal');
+        eventModal.style.display = 'none';
+        removeOverlay();
+      }
+    };
+  }
 }
 
 /**
@@ -163,15 +176,16 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
           : ''
         }
       `;
-      // Once-only click to drill in
-      li.addEventListener('click', () => {
+      // Use direct onclick handler
+      li.onclick = function() {
         dayEventsModal.style.display = 'none';
         removeOverlay();
         // Add a small delay before showing the event modal
         setTimeout(() => {
           showEventModal(ev, calendar, isMobile, token);
         }, 50);
-      }, { once: true });
+      };
+      
       dayEventsListEl.appendChild(li);
     });
   } else {
@@ -183,49 +197,64 @@ export function showDayEventsModal(date, dateStr, calendar, isMobile, token) {
   createOverlay();
   dayEventsModal.style.display = 'block';
 
-  addEventBtn.addEventListener('click', () => {
+  // Reset handlers
+  addEventBtn.onclick = null;
+  closeDayModalBtn.onclick = null;
+
+  // Add new handlers
+  addEventBtn.onclick = function() {
     dayEventsModal.style.display = 'none';
     removeOverlay();
     setTimeout(() => createEventPrompt(dateStr, calendar, token), 50);
-  }, { once: true });
+  };
 
-  closeDayModalBtn.addEventListener('click', () => {
+  closeDayModalBtn.onclick = function() {
     dayEventsModal.style.display = 'none';
     removeOverlay();
-  }, { once: true });
-
-  const outsideClickHandler = e => {
-    if (dayEventsModal.style.display === 'block' &&
-        !dayEventsModal.contains(e.target) &&
-        !e.target.closest('.fc-daygrid-day')) {
-      dayEventsModal.style.display = 'none';
-      removeOverlay();
-      document.removeEventListener('click', outsideClickHandler);
-    }
   };
-  setTimeout(() => {
-    document.addEventListener('click', outsideClickHandler, { once: true });
-  }, 100);
+
+  // Handle overlay clicks
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) {
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        dayEventsModal.style.display = 'none';
+        removeOverlay();
+      }
+    };
+  }
 }
 
 /**
  * EDIT‑MODE: Launch an inline edit modal.
  */
 export async function editEvent(event, token, calendar, isMobile) {
+  console.log('editEvent function called for:', event.title);
+  
   // Close any existing view modal/overlay
   const eventModal = document.getElementById('eventModal');
   if (eventModal) {
     eventModal.style.display = 'none';
   }
+  
+  // Remove any existing overlays and modals
   removeOverlay();
+  document.querySelectorAll('#editEventModal').forEach(modal => {
+    if (modal && modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+  });
 
   // Get the complete properties, either from our map or from the event
   const savedProps = window.eventPropertiesMap[event.id];
+  
   // Make sure we have the title
   const titleValue = savedProps ? savedProps.title : event.title;
   const descValue = savedProps ? savedProps.description : event.extendedProps.description || '';
   const whoValue = savedProps ? savedProps.who : event.extendedProps.who || '';
   const whenValue = savedProps ? savedProps.when : event.extendedProps.when || '';
+  
+  console.log('Edit values:', { titleValue, descValue, whoValue, whenValue });
   
   // Create & show edit modal with the correct properties
   const editModal = createEditModal({
@@ -238,6 +267,7 @@ export async function editEvent(event, token, calendar, isMobile) {
     }
   });
   
+  document.body.appendChild(editModal);
   createOverlay();
 
   // Get references to all form elements AFTER the modal is created and added to DOM
@@ -254,6 +284,15 @@ export async function editEvent(event, token, calendar, isMobile) {
     return;
   }
   
+  console.log('Edit form elements found:', { 
+    editTitleInput, 
+    editDescInput, 
+    editWhoInput, 
+    editWhenInput,
+    saveEditBtn,
+    cancelEditBtn
+  });
+  
   // Set the values explicitly
   editTitleInput.value = titleValue;
   editDescInput.value = descValue;
@@ -263,7 +302,11 @@ export async function editEvent(event, token, calendar, isMobile) {
   editDescInput.style.whiteSpace = 'pre-wrap';
   setTimeout(() => editTitleInput.focus(), 100);
 
-  // Use direct onclick handler for save button
+  // Clear any existing handlers
+  saveEditBtn.onclick = null;
+  cancelEditBtn.onclick = null;
+  
+  // Add new handlers
   saveEditBtn.onclick = async function() {
     console.log('Save button clicked');
     const newTitle = editTitleInput.value.trim();
@@ -325,13 +368,13 @@ export async function editEvent(event, token, calendar, isMobile) {
       if (isMobile) updateEventDots(calendar, isMobile);
       showToast('Event updated successfully!', 'success');
     } catch (err) {
+      console.error('Error updating event:', err);
       hideLoading();
       removeOverlay();
       showToast('Update error: ' + err.message, 'error');
     }
   };
   
-  // Use direct onclick handler for cancel button
   cancelEditBtn.onclick = function() {
     console.log('Cancel button clicked');
     editModal.style.display = 'none';
@@ -340,13 +383,28 @@ export async function editEvent(event, token, calendar, isMobile) {
     }
     removeOverlay();
   };
+  
+  // Handle overlay clicks
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) {
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        console.log('Clicked outside edit modal');
+        editModal.style.display = 'none';
+        if (editModal.parentNode) {
+          document.body.removeChild(editModal);
+        }
+        removeOverlay();
+      }
+    };
+  }
 }
 
 /**
  * EDIT‑MODE: Confirm & delete an event.
  */
 export async function deleteEvent(event, token, calendar, isMobile) {
-  console.log('Delete function called for event:', event.title);
+  console.log('deleteEvent function called for:', event.title);
   
   // Close any existing view modal
   const eventModal = document.getElementById('eventModal');
@@ -354,8 +412,13 @@ export async function deleteEvent(event, token, calendar, isMobile) {
     eventModal.style.display = 'none';
   }
   
-  // Remove any existing overlays first
+  // Remove any existing overlays and modals
   removeOverlay();
+  document.querySelectorAll('#confirmDeleteModal').forEach(modal => {
+    if (modal && modal.parentNode) {
+      modal.parentNode.removeChild(modal);
+    }
+  });
   
   // Create the delete confirmation modal
   const confirmModal = createDeleteModal(event);
@@ -368,14 +431,22 @@ export async function deleteEvent(event, token, calendar, isMobile) {
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
   
-  // Add event handlers using a Promise
+  console.log('Delete modal buttons:', { confirmDeleteBtn, cancelDeleteBtn });
+  
+  // Return a promise to handle async flow
   return new Promise((resolve) => {
+    // Clear any existing handlers
+    if (confirmDeleteBtn) confirmDeleteBtn.onclick = null;
+    if (cancelDeleteBtn) cancelDeleteBtn.onclick = null;
+    
+    // Add new handlers
     if (confirmDeleteBtn) {
       confirmDeleteBtn.onclick = async function() {
         console.log('Confirm delete clicked');
         
+        // Clean up modal
         if (confirmModal.parentNode) {
-          confirmModal.parentNode.removeChild(confirmModal);
+          document.body.removeChild(confirmModal);
         }
         removeOverlay();
         
@@ -410,6 +481,7 @@ export async function deleteEvent(event, token, calendar, isMobile) {
           showToast('Event deleted successfully!', 'success');
           resolve(true);
         } catch (err) {
+          console.error('Error deleting event:', err);
           hideLoading();
           showToast('Delete error: ' + err.message, 'error');
           resolve(false);
@@ -421,8 +493,9 @@ export async function deleteEvent(event, token, calendar, isMobile) {
       cancelDeleteBtn.onclick = function() {
         console.log('Cancel delete clicked');
         
+        // Clean up modal
         if (confirmModal.parentNode) {
-          confirmModal.parentNode.removeChild(confirmModal);
+          document.body.removeChild(confirmModal);
         }
         removeOverlay();
         resolve(false);
@@ -436,8 +509,9 @@ export async function deleteEvent(event, token, calendar, isMobile) {
         if (e.target === overlay) {
           console.log('Clicked outside delete modal');
           
+          // Clean up modal
           if (confirmModal.parentNode) {
-            confirmModal.parentNode.removeChild(confirmModal);
+            document.body.removeChild(confirmModal);
           }
           removeOverlay();
           resolve(false);
@@ -451,7 +525,17 @@ export async function deleteEvent(event, token, calendar, isMobile) {
  * EDIT‑MODE: Show modal to create a new event.
  */
 export function createEventPrompt(dateStr, calendar, token) {
+  console.log('createEventPrompt called for date:', dateStr);
+  
   removeOverlay();
+  
+  // Clean up any existing modals
+  document.querySelectorAll('#createEventModal').forEach(modal => {
+    if (modal.style.display === 'block') {
+      modal.style.display = 'none';
+    }
+  });
+  
   createOverlay();
 
   const createEventModal   = document.getElementById('createEventModal');
@@ -471,30 +555,53 @@ export function createEventPrompt(dateStr, calendar, token) {
 
   createEventModal.dataset.date  = dateStr;
   createEventModal.dataset.token = token;
+  
+  // Reset form values
   newEventTitleInput.value = '';
   newEventDescInput.value  = '';
   newEventWhoInput.value   = '';
   newEventWhenInput.value  = '';
+  
   newEventDescInput.style.whiteSpace = 'pre-wrap';
   createEventModal.style.display = 'block';
+  
   setTimeout(() => newEventTitleInput.focus(), 100);
 
-  // Use direct onclick handler
+  // Clear any existing handlers
+  saveNewEventBtn.onclick = null;
+  cancelNewEventBtn.onclick = null;
+  
+  // Add new handlers
   saveNewEventBtn.onclick = function() {
+    console.log('Save new event button clicked');
     saveNewEvent(calendar);
   };
 
-  // Use direct onclick handler
   cancelNewEventBtn.onclick = function() {
+    console.log('Cancel new event button clicked');
     createEventModal.style.display = 'none';
     removeOverlay();
   };
+  
+  // Handle overlay clicks
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) {
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        console.log('Clicked outside create modal');
+        createEventModal.style.display = 'none';
+        removeOverlay();
+      }
+    };
+  }
 }
 
 /**
  * EDIT‑MODE: Persist a newly created event to the backend.
  */
 export async function saveNewEvent(calendar) {
+  console.log('saveNewEvent function called');
+  
   const createEventModal   = document.getElementById('createEventModal');
   const newEventTitleInput = document.getElementById('newEventTitle');
   const newEventDescInput  = document.getElementById('newEventDesc');
@@ -549,7 +656,9 @@ export async function saveNewEvent(calendar) {
     const data = await res.json();
     hideLoading();
     removeOverlay();
+    
     if (!data.id) throw new Error('No event ID returned from server');
+    console.log('Event created successfully with ID:', data.id);
 
     // Store in our persistent map
     window.eventPropertiesMap[data.id] = {
@@ -559,6 +668,7 @@ export async function saveNewEvent(calendar) {
       when
     };
 
+    // Add the event to the calendar
     calendar.addEvent({
       id:       data.id,
       title,
@@ -570,6 +680,7 @@ export async function saveNewEvent(calendar) {
     if (window.innerWidth < 768) updateEventDots(calendar, true);
     showToast('Event created successfully!', 'success');
   } catch (err) {
+    console.error('Error creating event:', err);
     hideLoading();
     removeOverlay();
     console.error('Event creation error:', err);
