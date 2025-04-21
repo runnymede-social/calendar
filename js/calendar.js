@@ -207,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
           extendedProps: { 
             description: ev.description || '',
             who: ev.who || '',
+            contact: ev.contact || '',
             when: ev.when || '' 
           }
         });
