@@ -1,4 +1,4 @@
-// UI Components for Calendar Application
+// ui-components.js
 // Handles modal creation and management, notifications, and loading indicators
 
 // Create all modals used in the application
@@ -70,16 +70,17 @@ export function createAllModals() {
   modal.innerHTML = `
     <h3 id="modalTitle" style="margin-top: 0; color: #212529;"></h3>
     <p id="modalDesc" style="color: #6c757d;"></p>
-    <div id="modalWho" style="font-size: 0.9rem; color: #6c757d; margin-top: 8px;"></div>
-    <div id="modalWhen" style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;"></div>
+    <div id="modalWho"     style="font-size: 0.9rem; color: #6c757d; margin-top: 8px;"></div>
+    <div id="modalContact" style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;"></div>  <!-- new -->
+    <div id="modalWhen"    style="font-size: 0.9rem; color: #6c757d; margin-top: 5px;"></div>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="editBtn" class="primary-btn">Edit</button>
+      <button id="editBtn"   class="primary-btn">Edit</button>
       <button id="deleteBtn" class="danger-btn">Delete</button>
-      <button id="closeBtn" class="default-btn">Close</button>
+      <button id="closeBtn"  class="default-btn">Close</button>
     </div>
   `;
 
-  // Create event modal content with new Who and When fields
+  // Create event modal content with Who, Contact, and When fields
   createEventModal.innerHTML = `
     <h3 style="margin-top: 0; color: #212529;">Create New Event</h3>
     <div class="form-field">
@@ -93,6 +94,10 @@ export function createAllModals() {
     <div class="form-field">
       <label for="newEventWho">Who:</label>
       <input type="text" id="newEventWho" placeholder="Who is involved?">
+    </div>
+    <div class="form-field">
+      <label for="newEventContact">Contact:</label>    <!-- new -->
+      <input type="text" id="newEventContact" placeholder="Contact info">
     </div>
     <div class="form-field">
       <label for="newEventWhen">When:</label>
@@ -109,8 +114,8 @@ export function createAllModals() {
   
   return {
     eventModal: modal,
-    createEventModal: createEventModal,
-    dayEventsModal: dayEventsModal
+    createEventModal,
+    dayEventsModal
   };
 }
 
@@ -171,28 +176,25 @@ export function hideLoading() {
 
 // Toast notification system
 export function showToast(message, type = '', duration = 3000) {
-  // Remove any existing toast
   const existingToast = document.querySelector('.toast');
   if (existingToast) {
-    document.body.removeChild(existingToast);
+    existingToast.remove();
   }
   
   const toast = document.createElement('div');
   toast.className = 'toast ' + type;
   toast.textContent = message;
-  
   document.body.appendChild(toast);
   
-  // Force reflow to enable animation
+  // Trigger CSS animation
   void toast.offsetWidth;
-  
   toast.classList.add('show');
   
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => {
       if (toast.parentNode) {
-        document.body.removeChild(toast);
+        toast.parentNode.removeChild(toast);
       }
     }, 300);
   }, duration);
@@ -224,18 +226,22 @@ export function createEditModal(event) {
     </div>
     <div class="form-field">
       <label for="editEventDesc">Description:</label>
-      <textarea id="editEventDesc" style="min-height: 80px;">${event.extendedProps.description || ''}</textarea>
+      <textarea id="editEventDesc" style="min-height: 80px;">${event.extendedProps.description||''}</textarea>
     </div>
     <div class="form-field">
       <label for="editEventWho">Who:</label>
-      <input type="text" id="editEventWho" value="${event.extendedProps.who || ''}" placeholder="Who is involved?">
+      <input type="text" id="editEventWho" value="${event.extendedProps.who||''}" placeholder="Who is involved?">
+    </div>
+    <div class="form-field">
+      <label for="editEventContact">Contact:</label>    <!-- new -->
+      <input type="text" id="editEventContact" value="${event.extendedProps.contact||''}" placeholder="Contact info">
     </div>
     <div class="form-field">
       <label for="editEventWhen">When:</label>
-      <input type="text" id="editEventWhen" value="${event.extendedProps.when || ''}" placeholder="Time of day, duration, etc.">
+      <input type="text" id="editEventWhen" value="${event.extendedProps.when||''}" placeholder="Time of day, duration, etc.">
     </div>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
-      <button id="saveEditBtn" class="primary-btn">Save</button>
+      <button id="saveEditBtn"   class="primary-btn">Save</button>
       <button id="cancelEditBtn" class="default-btn">Cancel</button>
     </div>
   `;
@@ -267,10 +273,11 @@ export function createDeleteModal(event) {
     <p>Are you sure you want to delete this event: "${event.title}"?</p>
     <div style="display: flex; justify-content: space-between; margin-top: 15px;">
       <button id="confirmDeleteBtn" class="danger-btn">Delete</button>
-      <button id="cancelDeleteBtn" class="default-btn">Cancel</button>
+      <button id="cancelDeleteBtn"  class="default-btn">Cancel</button>
     </div>
   `;
   
   document.body.appendChild(confirmModal);
   return confirmModal;
 }
+
